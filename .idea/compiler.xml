@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <bytecodeTargetLevel>
+      <module name="com._main" target="1.8" />
+      <module name="com._test" target="1.8" />
+      <module name="com.ecommerce.mongodb_main" target="1.8" />
+      <module name="com.ecommerce.mongodb_test" target="1.8" />
+      <module name="com.spring.data.e_main" target="1.8" />
+      <module name="com.spring.data.e_test" target="1.8" />
+      <module name="Leila_main" target="1.8" />
+      <module name="Leila_test" target="1.8" />
+    </bytecodeTargetLevel>
+  </component>
+</project>
