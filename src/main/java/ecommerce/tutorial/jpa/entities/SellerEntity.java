@@ -12,7 +12,7 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name = "sellers")
-public class Seller
+public class SellerEntity
 {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -22,13 +22,13 @@ public class Seller
     private String accountId;
 
     @OneToOne(cascade = CascadeType.ALL, mappedBy = "profile")
-    private Profile profile;
+    private ProfileEntity profile;
 
-    public Seller()
+    public SellerEntity()
     {
     }
 
-    public Seller(String accountId)
+    public SellerEntity(String accountId)
     {
         this.accountId = accountId;
     }
@@ -53,12 +53,12 @@ public class Seller
         this.accountId = accountId;
     }
 
-    public Profile getProfile()
+    public ProfileEntity getProfile()
     {
         return profile;
     }
 
-    public void setProfile(Profile profile)
+    public void setProfile(ProfileEntity profile)
     {
         this.profile = profile;
     }

@@ -15,7 +15,7 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name = "categories")
-public class Category
+public class CategoryEntity
 {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -28,13 +28,13 @@ public class Category
     @JoinTable(name = "category_product",
             joinColumns = @JoinColumn(name = "category_id", referencedColumnName = "id"),
             inverseJoinColumns = @JoinColumn(name = "product_id", referencedColumnName = "id"))
-    private List<Product> products;
+    private List<ProductEntity> products;
 
-    public Category()
+    public CategoryEntity()
     {
     }
 
-    public Category(String name)
+    public CategoryEntity(String name)
     {
         this.name = name;
     }
@@ -59,12 +59,12 @@ public class Category
         this.name = name;
     }
 
-    public List<Product> getProducts()
+    public List<ProductEntity> getProducts()
     {
         return products;
     }
 
-    public void setProducts(List<Product> products)
+    public void setProducts(List<ProductEntity> products)
     {
         this.products = products;
     }

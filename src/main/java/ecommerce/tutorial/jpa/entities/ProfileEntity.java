@@ -17,7 +17,7 @@ import javax.persistence.TemporalType;
 import ecommerce.tutorial.enums.Gender;
 
 @Entity
-public class Profile
+public class ProfileEntity
 {
     @Id
     private long id;
@@ -25,7 +25,7 @@ public class Profile
     @OneToOne
     @JoinColumn
     @MapsId
-    private Seller seller;
+    private SellerEntity seller;
 
     @NotNull
     private String firstName;
@@ -45,11 +45,11 @@ public class Profile
     @Enumerated(EnumType.STRING)
     private Gender gender;
 
-    public Profile()
+    public ProfileEntity()
     {
     }
 
-    public Profile(Seller seller, String firstName, String lastName, Gender gender)
+    public ProfileEntity(SellerEntity seller, String firstName, String lastName, Gender gender)
     {
         this.seller = seller;
         this.firstName = firstName;
@@ -67,12 +67,12 @@ public class Profile
         this.id = id;
     }
 
-    public Seller getSeller()
+    public SellerEntity getSeller()
     {
         return seller;
     }
 
-    public void setSeller(Seller seller)
+    public void setSeller(SellerEntity seller)
     {
         this.seller = seller;
     }

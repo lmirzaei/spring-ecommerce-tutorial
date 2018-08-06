@@ -18,7 +18,7 @@ import javax.persistence.Table;
 
 @Entity
 @Table(name = "products")
-public class Product
+public class ProductEntity
 {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -36,19 +36,19 @@ public class Product
     @Column(name = "image_URL")
     private List<String> images;
 
-    @ManyToOne(targetEntity = Seller.class)
+    @ManyToOne(targetEntity = SellerEntity.class)
     @JoinColumn(name = "seller_id", referencedColumnName = "id")
-    private Seller seller;
+    private SellerEntity seller;
 
 
     @ManyToMany(mappedBy = "products")
-    private List<Category> fallIntoCategories;
+    private List<CategoryEntity> fallIntoCategories;
 
-    public Product()
+    public ProductEntity()
     {
     }
 
-    public Product(String name, String description, float price, List<String> images, Seller seller, List<Category> fallIntoCategories)
+    public ProductEntity(String name, String description, float price, List<String> images, SellerEntity seller, List<CategoryEntity> fallIntoCategories)
     {
         this.name = name;
         this.description = description;
@@ -108,22 +108,22 @@ public class Product
         this.images = images;
     }
 
-    public Seller getSeller()
+    public SellerEntity getSeller()
     {
         return seller;
     }
 
-    public void setSeller(Seller seller)
+    public void setSeller(SellerEntity seller)
     {
         this.seller = seller;
     }
 
-    public List<Category> getFallIntoCategories()
+    public List<CategoryEntity> getFallIntoCategories()
     {
         return fallIntoCategories;
     }
 
-    public void setFallIntoCategories(List<Category> fallIntoCategories)
+    public void setFallIntoCategories(List<CategoryEntity> fallIntoCategories)
     {
         this.fallIntoCategories = fallIntoCategories;
     }
