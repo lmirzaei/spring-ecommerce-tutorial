@@ -49,15 +49,11 @@ public class Profile
     {
     }
 
-    public Profile(Seller seller, String firstName, String lastName, String website, Date birthday, String address, String emailAddress, Gender gender)
+    public Profile(Seller seller, String firstName, String lastName, Gender gender)
     {
         this.seller = seller;
         this.firstName = firstName;
         this.lastName = lastName;
-        this.website = website;
-        this.birthday = birthday;
-        this.address = address;
-        this.emailAddress = emailAddress;
         this.gender = gender;
     }
 
