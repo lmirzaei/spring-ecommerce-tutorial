@@ -27,6 +27,13 @@ public class Profile
     {
     }
 
+    public Profile(String firstName, String lastName, Gender gender)
+    {
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.gender = gender;
+    }
+
     public String getFirstName()
     {
         return firstName;

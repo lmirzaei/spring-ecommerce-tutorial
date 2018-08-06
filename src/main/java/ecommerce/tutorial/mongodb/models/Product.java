@@ -1,12 +1,14 @@
 package ecommerce.tutorial.mongodb.models;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.util.List;
 
 @Document(collection = "products")
+@TypeAlias("Product")
 public class Product
 {
     @Id
@@ -15,6 +17,8 @@ public class Product
     private String name;
 
     private String description;
+
+    private float price;
 
     private List<String> image_URLs;
 
@@ -25,6 +29,15 @@ public class Product
 
     public Product()
     {
+    }
+
+    public Product(String name, String description, float price, Seller seller, List<Category> fallIntoCategories)
+    {
+        this.name = name;
+        this.description = description;
+        this.price = price;
+        this.seller = seller;
+        this.fallIntoCategories = fallIntoCategories;
     }
 
     public long getId()
@@ -55,6 +68,16 @@ public class Product
     public void setDescription(String description)
     {
         this.description = description;
+    }
+
+    public float getPrice()
+    {
+        return price;
+    }
+
+    public void setPrice(float price)
+    {
+        this.price = price;
     }
 
     public List<String> getImage_URLs()

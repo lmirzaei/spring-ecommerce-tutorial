@@ -1,10 +1,12 @@
 package ecommerce.tutorial.mongodb.models;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Document(collection = "sellers")
+@TypeAlias(value = "Seller")
 public class Seller
 {
     @Id
@@ -18,6 +20,12 @@ public class Seller
 
     public Seller()
     {
+    }
+
+    public Seller(String accountId, Profile profile)
+    {
+        this.accountId = accountId;
+        this.profile = profile;
     }
 
     public long getId()
