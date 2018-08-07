@@ -5,6 +5,7 @@ import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.util.HashSet;
 import java.util.List;
 
 @Document(collection = "products")
@@ -12,7 +13,7 @@ import java.util.List;
 public class Product
 {
     @Id
-    private long id;
+    private String id;
 
     private String name;
 
@@ -25,13 +26,13 @@ public class Product
     @DBRef
     private Seller seller;
 
-    private List<Category> fallIntoCategories;
+    private HashSet<Category> fallIntoCategories;
 
     public Product()
     {
     }
 
-    public Product(String name, String description, float price, Seller seller, List<Category> fallIntoCategories)
+    public Product(String name, String description, float price, Seller seller, HashSet<Category> fallIntoCategories)
     {
         this.name = name;
         this.description = description;
@@ -40,12 +41,12 @@ public class Product
         this.fallIntoCategories = fallIntoCategories;
     }
 
-    public long getId()
+    public String getId()
     {
         return id;
     }
 
-    public void setId(long id)
+    public void setId(String id)
     {
         this.id = id;
     }
@@ -100,12 +101,12 @@ public class Product
         this.seller = seller;
     }
 
-    public List<Category> getFallIntoCategories()
+    public HashSet<Category> getFallIntoCategories()
     {
         return fallIntoCategories;
     }
 
-    public void setFallIntoCategories(List<Category> fallIntoCategories)
+    public void setFallIntoCategories(HashSet<Category> fallIntoCategories)
     {
         this.fallIntoCategories = fallIntoCategories;
     }
