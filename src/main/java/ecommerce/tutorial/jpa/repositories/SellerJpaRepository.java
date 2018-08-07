@@ -4,7 +4,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 import ecommerce.tutorial.jpa.entities.SellerEntity;
 
-public interface SellerRepository extends JpaRepository<SellerEntity, Long>
+public interface SellerJpaRepository extends JpaRepository<SellerEntity, Long>
 {
 
 }
