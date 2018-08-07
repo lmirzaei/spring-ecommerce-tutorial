@@ -9,6 +9,7 @@ import org.springframework.data.mongodb.repository.config.EnableMongoRepositorie
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 
 import ecommerce.tutorial.enums.Gender;
@@ -88,7 +89,7 @@ public class Application implements CommandLineRunner
         imageUrls.add("https://images-na.ssl-images-amazon.com/images/I/811WCp%2BnIaL._SL1500_.jpg");
         ProductEntity pictureProductEntity = new ProductEntity("Framed Canvas Wall Art",
                 "Canvas Prints describe Purple Trees, with High Definition Giclee Print On Thick High Quality Canvas",
-                42.34f, imageUrls, michaelSellerEntity, Arrays.asList(artCategory, wallDecorCategory));
+                42.34f, imageUrls, michaelSellerEntity, new HashSet<>(Arrays.asList(artCategory, wallDecorCategory)));
         pictureProductEntity = _productJpaRepository.save(pictureProductEntity);
 
 
@@ -98,7 +99,7 @@ public class Application implements CommandLineRunner
         imageUrls.add("https://images-na.ssl-images-amazon.com/images/I/91zq0dI0tBL._SL1500_.jpg");
         ProductEntity dollProductEntity = new ProductEntity("Teddy Bear",
                 "Ramon tan teddy with realistic paw pad accents and heart shaped tummy",
-                24.25f, imageUrls, judySellerEntity, Arrays.asList(babyCategoryEntity, toysCategoryEntity));
+                24.25f, imageUrls, judySellerEntity, new HashSet<>(Arrays.asList(babyCategoryEntity, toysCategoryEntity)));
         dollProductEntity = _productJpaRepository.save(dollProductEntity);
 
 
@@ -124,7 +125,7 @@ public class Application implements CommandLineRunner
 
 
         //--------------Create a product in three different categories------------------
-        List<Category> categoryList = Arrays.asList(furnitureCategory, handmadeCategory, woodCategory);
+        HashSet<Category> categoryList = new HashSet<>(Arrays.asList(furnitureCategory, handmadeCategory, woodCategory));
         Product leilaDeskProduct = new Product("A Wooden Desk", "This is a comfortable made by Leila!", 249.99f, leilaSellerMongo, categoryList);
         leilaDeskProduct = _productMongoReposirory.save(leilaDeskProduct);
 
