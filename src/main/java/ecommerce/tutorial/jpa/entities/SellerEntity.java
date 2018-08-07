@@ -21,7 +21,7 @@ public class SellerEntity
     @NotNull
     private String accountId;
 
-    @OneToOne(cascade = CascadeType.ALL, mappedBy = "profile")
+    @OneToOne(cascade = CascadeType.ALL, mappedBy = "seller")
     private ProfileEntity profile;
 
     public SellerEntity()
