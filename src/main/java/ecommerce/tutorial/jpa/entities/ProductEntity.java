@@ -2,7 +2,9 @@ package ecommerce.tutorial.jpa.entities;
 
 import com.sun.istack.internal.NotNull;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.persistence.CollectionTable;
 import javax.persistence.Column;
@@ -12,6 +14,7 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
+import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
@@ -41,14 +44,17 @@ public class ProductEntity
     private SellerEntity seller;
 
 
-    @ManyToMany(mappedBy = "products")
-    private List<CategoryEntity> fallIntoCategories;
+    @ManyToMany
+    @JoinTable(name = "product_category",
+            joinColumns = @JoinColumn(name = "product_id", referencedColumnName = "id"),
+            inverseJoinColumns = @JoinColumn(name = "category_id", referencedColumnName = "id"))
+    private Set<CategoryEntity> fallIntoCategories;
 
     public ProductEntity()
     {
     }
 
-    public ProductEntity(String name, String description, float price, List<String> images, SellerEntity seller, List<CategoryEntity> fallIntoCategories)
+    public ProductEntity(String name, String description, float price, List<String> images, SellerEntity seller, HashSet<CategoryEntity> fallIntoCategories)
     {
         this.name = name;
         this.description = description;
@@ -118,12 +124,12 @@ public class ProductEntity
         this.seller = seller;
     }
 
-    public List<CategoryEntity> getFallIntoCategories()
+    public Set<CategoryEntity> getFallIntoCategories()
     {
         return fallIntoCategories;
     }
 
-    public void setFallIntoCategories(List<CategoryEntity> fallIntoCategories)
+    public void setFallIntoCategories(HashSet<CategoryEntity> fallIntoCategories)
     {
         this.fallIntoCategories = fallIntoCategories;
     }

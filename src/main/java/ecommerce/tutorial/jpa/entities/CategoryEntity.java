@@ -2,14 +2,13 @@ package ecommerce.tutorial.jpa.entities;
 
 import com.sun.istack.internal.NotNull;
 
-import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
-import javax.persistence.JoinColumn;
-import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.Table;
 
@@ -24,11 +23,8 @@ public class CategoryEntity
     @NotNull
     private String name;
 
-    @ManyToMany
-    @JoinTable(name = "category_product",
-            joinColumns = @JoinColumn(name = "category_id", referencedColumnName = "id"),
-            inverseJoinColumns = @JoinColumn(name = "product_id", referencedColumnName = "id"))
-    private List<ProductEntity> products;
+    @ManyToMany(mappedBy = "fallIntoCategories")
+    private Set<ProductEntity> products;
 
     public CategoryEntity()
     {
@@ -59,12 +55,12 @@ public class CategoryEntity
         this.name = name;
     }
 
-    public List<ProductEntity> getProducts()
+    public Set<ProductEntity> getProducts()
     {
         return products;
     }
 
-    public void setProducts(List<ProductEntity> products)
+    public void setProducts(HashSet<ProductEntity> products)
     {
         this.products = products;
     }
