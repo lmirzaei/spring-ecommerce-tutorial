@@ -11,12 +11,14 @@ import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.MapsId;
 import javax.persistence.OneToOne;
+import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
 import ecommerce.tutorial.enums.Gender;
 
 @Entity
+@Table(name = "profile")
 public class ProfileEntity
 {
     @Id
