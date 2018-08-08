@@ -1,7 +1,5 @@
 package ecommerce.tutorial.jpa.entities;
 
-import com.sun.istack.internal.NotNull;
-
 import java.util.HashSet;
 import java.util.Set;
 
@@ -11,6 +9,7 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.ManyToMany;
 import javax.persistence.Table;
+import javax.validation.constraints.NotNull;
 
 @Entity
 @Table(name = "categories")
@@ -24,7 +23,7 @@ public class CategoryEntity
     private String name;
 
     @ManyToMany(mappedBy = "fallIntoCategories")
-    private Set<ProductEntity> products;
+    private Set<ProductEntity> products = new HashSet<>();
 
     public CategoryEntity()
     {
