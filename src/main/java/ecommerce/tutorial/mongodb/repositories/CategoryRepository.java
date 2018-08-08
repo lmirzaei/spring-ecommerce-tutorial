@@ -6,5 +6,5 @@ import ecommerce.tutorial.mongodb.models.Category;
 
 public interface CategoryRepository extends MongoRepository<Category, Long>
 {
-
+    Category findByName(String categoryName);
 }
