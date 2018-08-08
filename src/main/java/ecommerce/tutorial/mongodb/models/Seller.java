@@ -10,7 +10,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 public class Seller
 {
     @Id
-    private long id;
+    private String id;
 
     @Indexed(unique = true)
 //@Indexed annotation tells the mapping framework to call createIndex(…) on that property of your document, making searches faster.
@@ -28,12 +28,12 @@ public class Seller
         this.profile = profile;
     }
 
-    public long getId()
+    public String getId()
     {
         return id;
     }
 
-    public void setId(long id)
+    public void setId(String id)
     {
         this.id = id;
     }
