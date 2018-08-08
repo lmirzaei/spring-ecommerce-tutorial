@@ -1,16 +1,25 @@
 package ecommerce.tutorial;
 
+import com.mongodb.MongoClient;
+import com.mongodb.client.result.UpdateResult;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
+import org.springframework.data.mongodb.core.MongoOperations;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import ecommerce.tutorial.enums.Gender;
 import ecommerce.tutorial.jpa.entities.CategoryEntity;
@@ -126,8 +135,20 @@ public class Application implements CommandLineRunner
 
         //--------------Create a product in three different categories------------------
         HashSet<Category> categoryList = new HashSet<>(Arrays.asList(furnitureCategory, handmadeCategory, woodCategory));
-        Product leilaDeskProduct = new Product("A Wooden Desk", "This is a comfortable made by Leila!", 249.99f, leilaSellerMongo, categoryList);
+        Product leilaDeskProduct = new Product("A Wooden Desk", "This is a comfortable made by Leila!",
+                249.99f, leilaSellerMongo, categoryList);
         leilaDeskProduct = _productMongoReposirory.save(leilaDeskProduct);
+
+        MongoOperations mongoOperation = new MongoTemplate(new MongoClient(), "local");
+        Update update = new Update();
+        update.addToSet("productsOfCategory", leilaDeskProduct.getId());
+
+        List<String> ids = leilaDeskProduct.getFallIntoCategories().stream().map(Category::getId).collect(Collectors.toList());
+        Query myUpdateQuery = new Query();
+        myUpdateQuery.addCriteria(Criteria.where("_id").in(ids));
+        UpdateResult updateResult = mongoOperation.updateMulti(myUpdateQuery, update, Category.class);
+        System.out.println("The count of categories which updated after saving this product is:  " + String.valueOf(updateResult.getMatchedCount()));
+
 
         System.out.println("__________________________________________________________________");
         System.out.println("Test Mongo repository");
@@ -136,5 +157,6 @@ public class Application implements CommandLineRunner
         System.out.println("__________________________________________________________________");
 
     }
+
 
 }
