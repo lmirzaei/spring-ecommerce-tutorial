@@ -1,7 +1,5 @@
 package ecommerce.tutorial.jpa.entities;
 
-import com.sun.istack.internal.NotNull;
-
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -18,6 +16,8 @@ import javax.persistence.JoinTable;
 import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.Table;
+import javax.validation.constraints.NotNull;
+import javax.validation.constraints.Size;
 
 @Entity
 @Table(name = "products")
@@ -37,10 +37,13 @@ public class ProductEntity
     @ElementCollection
     @CollectionTable(name = "Product_Images", joinColumns = @JoinColumn(name = "product_id"))
     @Column(name = "image_URL")
+    @Size(min = 1)
+    @NotNull
     private List<String> images;
 
     @ManyToOne(targetEntity = SellerEntity.class)
     @JoinColumn(name = "seller_id", referencedColumnName = "id")
+    @NotNull
     private SellerEntity seller;
 
 
@@ -48,6 +51,8 @@ public class ProductEntity
     @JoinTable(name = "product_category",
             joinColumns = @JoinColumn(name = "product_id", referencedColumnName = "id"),
             inverseJoinColumns = @JoinColumn(name = "category_id", referencedColumnName = "id"))
+    @Size(min = 1)
+    @NotNull
     private Set<CategoryEntity> fallIntoCategories;
 
     public ProductEntity()
