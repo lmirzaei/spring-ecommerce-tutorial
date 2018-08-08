@@ -5,8 +5,10 @@ import org.springframework.data.annotation.TypeAlias;
 import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Document(collection = "products")
 @TypeAlias("Product")
@@ -21,12 +23,12 @@ public class Product
 
     private float price;
 
-    private List<String> image_URLs;
+    private List<String> image_URLs = new ArrayList<>();
 
     @DBRef
     private Seller seller;
 
-    private HashSet<Category> fallIntoCategories;
+    private Set<Category> fallIntoCategories = new HashSet<>();
 
     public Product()
     {
@@ -101,7 +103,7 @@ public class Product
         this.seller = seller;
     }
 
-    public HashSet<Category> getFallIntoCategories()
+    public Set<Category> getFallIntoCategories()
     {
         return fallIntoCategories;
     }
