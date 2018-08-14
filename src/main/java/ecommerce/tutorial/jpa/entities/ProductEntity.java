@@ -35,8 +35,8 @@ public class ProductEntity
     private float price;
 
     @ElementCollection
-    @CollectionTable(name = "Product_Images", joinColumns = @JoinColumn(name = "product_id"))
-    @Column(name = "image_URL")
+    @CollectionTable(name = "Product_Images", joinColumns = @JoinColumn(name = "product_id", nullable = false))
+    @Column(name = "image_URL", nullable = false)
     @Size(min = 1)
     @NotNull
     private List<String> images;
