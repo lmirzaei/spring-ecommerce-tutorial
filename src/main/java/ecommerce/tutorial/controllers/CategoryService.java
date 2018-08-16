@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -69,7 +68,6 @@ public class CategoryService
     }
 
     @GetMapping(path = "/all/mongo")
-    @ResponseBody
     public List<Category> getAllCategoriesFromMongoDB()
     {
         return _categoryMongoRepository.findAll();
@@ -89,7 +87,6 @@ public class CategoryService
     }
 
     @GetMapping(path = "/all/mysql")
-    @ResponseBody
     public List<CategoryEntity> getAllCategoriesFromMysql()
     {
         return _categoryJpaRepository.findAll();
@@ -97,7 +94,6 @@ public class CategoryService
 
     //--------------------------------------Create a Category-----------------------------------------------------------
     @PostMapping(path = "/mysql")
-    @ResponseBody
     public Object addNewCategoryInMysql(@RequestParam(value = "name") String name)
     {
         if (name == null || name.trim().isEmpty())
