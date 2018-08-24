@@ -1,8 +1,11 @@
 package ecommerce.tutorial.jpa.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.util.HashSet;
 import java.util.Set;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -22,7 +25,8 @@ public class CategoryEntity
     @NotNull
     private String name;
 
-    @ManyToMany(mappedBy = "fallIntoCategories")
+    @ManyToMany(mappedBy = "fallIntoCategories", cascade = CascadeType.ALL)
+    @JsonIgnore
     private Set<ProductEntity> products = new HashSet<>();
 
     public CategoryEntity()
@@ -63,4 +67,11 @@ public class CategoryEntity
     {
         this.products = products;
     }
+
+//    @Override
+//    public String toString()
+//    {
+//        return "The Category: " + getName();
+//    }
 }
+
