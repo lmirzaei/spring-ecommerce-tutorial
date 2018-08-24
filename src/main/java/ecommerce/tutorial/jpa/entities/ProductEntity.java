@@ -55,6 +55,8 @@ public class ProductEntity
     @NotNull
     private Set<CategoryEntity> fallIntoCategories;
 
+    //So, when using the @ManyToMany annotation, always use a java.util.Set and avoid the java.util.List.
+
     public ProductEntity()
     {
     }
@@ -138,5 +140,11 @@ public class ProductEntity
     {
         this.fallIntoCategories = fallIntoCategories;
     }
+//
+//    @Override
+//    public String toString()
+//    {
+//        return "The Product: " + getName();
+//    }
 }
 
