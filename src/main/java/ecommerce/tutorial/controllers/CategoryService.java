@@ -26,13 +26,9 @@ import javax.validation.Valid;
 
 import ecommerce.tutorial.jpa.entities.CategoryEntity;
 import ecommerce.tutorial.jpa.repositories.CategoryJpaRepository;
-import ecommerce.tutorial.jpa.repositories.ProductJpaRepository;
-import ecommerce.tutorial.jpa.repositories.SellerJpaRepository;
 import ecommerce.tutorial.mongodb.models.Category;
 import ecommerce.tutorial.mongodb.models.Product;
 import ecommerce.tutorial.mongodb.repositories.CategoryRepository;
-import ecommerce.tutorial.mongodb.repositories.ProductRepository;
-import ecommerce.tutorial.mongodb.repositories.SellerRepository;
 
 @RestController
 @RequestMapping(path = "/category")
@@ -43,16 +39,8 @@ public class CategoryService
     @Autowired
     private CategoryRepository _categoryMongoRepository;
     @Autowired
-    private ProductRepository _productMongoReposirory;
-    @Autowired
-    private SellerRepository _sellerMongoRepository;
-
-    @Autowired
     private CategoryJpaRepository _categoryJpaRepository;
-    @Autowired
-    ProductJpaRepository _productJpaRepository;
-    @Autowired
-    SellerJpaRepository _sellerJpaRepository;
+
 
     //--------------------------------------Retrieve (a) Categories-----------------------------------------------------
     @GetMapping(path = "/mongo")
@@ -63,7 +51,7 @@ public class CategoryService
         {
             return new ResponseEntity<Category>(categoryMongo, HttpStatus.OK);
         }
-        System.out.println("There isn't any Category in Mongo database with name: " + name);
+        System.out.println("There isn't any Category in Mongodb database with name: " + name);
         return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
@@ -92,7 +80,19 @@ public class CategoryService
         return _categoryJpaRepository.findAll();
     }
 
+
     //--------------------------------------Create a Category-----------------------------------------------------------
+    @PostMapping(path = "/mongo")
+    public ResponseEntity<Category> addNewCategoryInMongoDB(@Valid @RequestBody Category category)
+    {
+        if (category == null || category.getName() == null || category.getName().trim().isEmpty())
+        {
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+        Category createdCategory = _categoryMongoRepository.save(category);
+        return new ResponseEntity<>(createdCategory, HttpStatus.OK);
+    }
+
     @PostMapping(path = "/mysql")
     public Object addNewCategoryInMysql(@RequestParam(value = "name") String name)
     {
@@ -104,18 +104,6 @@ public class CategoryService
         createdCategoryEntity = _categoryJpaRepository.save(createdCategoryEntity);
         System.out.println("A new Category created in MySQL database with id: " + createdCategoryEntity.getId() + "  and name: " + createdCategoryEntity.getName());
         return createdCategoryEntity;
-    }
-
-
-    @PostMapping(path = "/mongo")
-    public ResponseEntity<Category> addNewCategoryInMongoDB(@Valid @RequestBody Category category)
-    {
-        if (category == null || category.getName() == null || category.getName().trim().isEmpty())
-        {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
-        Category createdCategory = _categoryMongoRepository.save(category);
-        return new ResponseEntity<>(createdCategory, HttpStatus.OK);
     }
 
 
@@ -148,7 +136,6 @@ public class CategoryService
 
         return new ResponseEntity<>(_categoryMongoRepository.findById(category.getId()).get(), HttpStatus.OK);
     }
-
 
     @PutMapping(path = "/mysql")
     public ResponseEntity<String> updateCategoryInMysql(@Valid @RequestBody CategoryEntity category)
