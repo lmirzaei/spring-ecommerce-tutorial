@@ -1,5 +1,6 @@
 package ecommerce.tutorial.jpa.entities;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.sun.istack.internal.NotNull;
 
 import java.util.Date;
@@ -27,6 +28,7 @@ public class ProfileEntity
     @OneToOne
     @JoinColumn
     @MapsId
+    @JsonIgnore
     private SellerEntity seller;
 
     @NotNull
