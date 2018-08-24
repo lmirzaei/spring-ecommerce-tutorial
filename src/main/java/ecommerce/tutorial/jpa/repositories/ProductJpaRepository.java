@@ -6,5 +6,5 @@ import ecommerce.tutorial.jpa.entities.ProductEntity;
 
 public interface ProductJpaRepository extends JpaRepository<ProductEntity, Long>
 {
-
+    ProductEntity findByName(String name);
 }
