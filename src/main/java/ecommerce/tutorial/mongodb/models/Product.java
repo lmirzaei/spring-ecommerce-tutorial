@@ -28,13 +28,13 @@ public class Product
     @DBRef
     private Seller seller;
 
-    private Set<Category> fallIntoCategories = new HashSet<>();
+    private Set<EmbeddedCategory> fallIntoCategories = new HashSet<>();
 
     public Product()
     {
     }
 
-    public Product(String name, String description, float price, Seller seller, HashSet<Category> fallIntoCategories)
+    public Product(String name, String description, float price, Seller seller, HashSet<EmbeddedCategory> fallIntoCategories)
     {
         this.name = name;
         this.description = description;
@@ -103,12 +103,12 @@ public class Product
         this.seller = seller;
     }
 
-    public Set<Category> getFallIntoCategories()
+    public Set<EmbeddedCategory> getFallIntoCategories()
     {
         return fallIntoCategories;
     }
 
-    public void setFallIntoCategories(HashSet<Category> fallIntoCategories)
+    public void setFallIntoCategories(HashSet<EmbeddedCategory> fallIntoCategories)
     {
         this.fallIntoCategories = fallIntoCategories;
     }
