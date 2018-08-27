@@ -13,7 +13,6 @@ public class Seller
     private String id;
 
     @Indexed(unique = true)
-//@Indexed annotation tells the mapping framework to call createIndex(…) on that property of your document, making searches faster.
     private String accountId;
 
     private Profile profile;
@@ -56,5 +55,18 @@ public class Seller
     public void setProfile(Profile profile)
     {
         this.profile = profile;
+    }
+
+    @Override
+    public String toString()
+    {
+        if (profile == null)
+        {
+            return super.toString();
+        }
+        else
+        {
+            return profile.getFirstName() + " " + profile.getLastName();
+        }
     }
 }
