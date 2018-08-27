@@ -55,9 +55,9 @@ public class Application implements CommandLineRunner
     @Autowired
     private CategoryJpaRepository _categoryJpaRepository;
     @Autowired
-    ProductJpaRepository _productJpaRepository;
+    private ProductJpaRepository _productJpaRepository;
     @Autowired
-    SellerJpaRepository _sellerJpaRepository;
+    private SellerJpaRepository _sellerJpaRepository;
 
 
     public static void main(String[] args)
