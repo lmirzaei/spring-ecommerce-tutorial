@@ -15,6 +15,7 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -30,6 +31,7 @@ import ecommerce.tutorial.jpa.repositories.CategoryJpaRepository;
 import ecommerce.tutorial.jpa.repositories.ProductJpaRepository;
 import ecommerce.tutorial.jpa.repositories.SellerJpaRepository;
 import ecommerce.tutorial.mongodb.models.Category;
+import ecommerce.tutorial.mongodb.models.EmbeddedCategory;
 import ecommerce.tutorial.mongodb.models.Product;
 import ecommerce.tutorial.mongodb.models.Profile;
 import ecommerce.tutorial.mongodb.models.Seller;
@@ -71,25 +73,26 @@ public class Application implements CommandLineRunner
         _sellerJpaRepository.deleteAll();
 
         //--------------Create two sellers-----------------------------------------
-        SellerEntity judySellerEntity = new SellerEntity("google account id for Judy is 3243523567678000000");
-        ProfileEntity judyProfileEntity = new ProfileEntity(judySellerEntity, "Judy", "Adams", Gender.Female);
-        judySellerEntity = _sellerJpaRepository.save(judySellerEntity);
-
-        SellerEntity michaelSellerEntity = new SellerEntity("google account id for Michael is 9443129034679800011");
-        ProfileEntity michaelProfileEntity = new ProfileEntity(michaelSellerEntity, "Michael", "Martin", Gender.Male);
-        michaelSellerEntity = _sellerJpaRepository.save(michaelSellerEntity);
+        SellerEntity judy = new SellerEntity("google account id for Judy is 3243523567678000000");
+        ProfileEntity judyProfile = new ProfileEntity(judy, "Judy", "Adams", Gender.Female);
+        judyProfile.setBirthday(new SimpleDateFormat("MM/dd/yyyy").parse(("4/12/2010")));
+        judy.setProfile(judyProfile);
+        judy = _sellerJpaRepository.save(judy);
+        SellerEntity michael = new SellerEntity("google account id for Michael is 9443129034679800011");
+        ProfileEntity michaelProfile = new ProfileEntity(michael, "Michael", "Martin", Gender.Male);
+        michael.setProfile(michaelProfile);
+        michael = _sellerJpaRepository.save(michael);
 
 
         //--------------Create 4 different categories and save them--------------------
         CategoryEntity artCategory = new CategoryEntity("Art");
         CategoryEntity wallDecorCategory = new CategoryEntity("Wall Decor");
-        CategoryEntity babyCategoryEntity = new CategoryEntity("Baby");
-        CategoryEntity toysCategoryEntity = new CategoryEntity("Toys");
-
+        CategoryEntity babyCategory = new CategoryEntity("Baby");
+        CategoryEntity toysCategory = new CategoryEntity("Toys");
         artCategory = _categoryJpaRepository.save(artCategory);
         wallDecorCategory = _categoryJpaRepository.save(wallDecorCategory);
-        babyCategoryEntity = _categoryJpaRepository.save(babyCategoryEntity);
-        toysCategoryEntity = _categoryJpaRepository.save(toysCategoryEntity);
+        babyCategory = _categoryJpaRepository.save(babyCategory);
+        toysCategory = _categoryJpaRepository.save(toysCategory);
 
 
         //--------------Create a product in wall decor and art categories--------------
@@ -98,7 +101,7 @@ public class Application implements CommandLineRunner
         imageUrls.add("https://images-na.ssl-images-amazon.com/images/I/811WCp%2BnIaL._SL1500_.jpg");
         ProductEntity pictureProductEntity = new ProductEntity("Framed Canvas Wall Art",
                 "Canvas Prints describe Purple Trees, with High Definition Giclee Print On Thick High Quality Canvas",
-                42.34f, imageUrls, michaelSellerEntity, new HashSet<>(Arrays.asList(artCategory, wallDecorCategory)));
+                42.34f, imageUrls, michael, new HashSet<>(Arrays.asList(artCategory, wallDecorCategory)));
         pictureProductEntity = _productJpaRepository.save(pictureProductEntity);
 
 
@@ -108,53 +111,90 @@ public class Application implements CommandLineRunner
         imageUrls.add("https://images-na.ssl-images-amazon.com/images/I/91zq0dI0tBL._SL1500_.jpg");
         ProductEntity dollProductEntity = new ProductEntity("Teddy Bear",
                 "Ramon tan teddy with realistic paw pad accents and heart shaped tummy",
-                24.25f, imageUrls, judySellerEntity, new HashSet<>(Arrays.asList(babyCategoryEntity, toysCategoryEntity)));
+                24.25f, imageUrls, judy, new HashSet<>(Arrays.asList(babyCategory, toysCategory)));
         dollProductEntity = _productJpaRepository.save(dollProductEntity);
 
 
+        ////////////////////////Test MongoDB///////////////////////////////////////////////////
+        MongoOperations mongoOperation = new MongoTemplate(new MongoClient(), "local");
         _categoryMongoRepository.deleteAll();
         _sellerMongoRepository.deleteAll();
         _productMongoReposirory.deleteAll();
 
 
         //--------------Create a seller-----------------------------------------------
-        Profile leilaProfileMongo = new Profile("Leila", "Mongo Seller", Gender.Female);
-        Seller leilaSellerMongo = new Seller("account id = 23456789", leilaProfileMongo);
-        _sellerMongoRepository.save(leilaSellerMongo);
+        Profile profile = new Profile("Peter", "Smith", Gender.Male);
+        Seller seller = new Seller("Peter's google account id = 23456789", profile);
+        _sellerMongoRepository.save(seller);
+
+        System.out.println("__________________________________________________________________");
+        System.out.println("Test Mongo repository");
+        System.out.println("Find a seller by first name");
+        _sellerMongoRepository.findByFirstName("Peter").forEach(System.out::println);
+        System.out.println("__________________________________________________________________");
 
 
-        //--------------Create three different categories------------------------------
+        //--------------Create four different categories in MongoDB-------------------
         Category furnitureCategory = new Category("Furniture");
         Category handmadeCategory = new Category("Handmade");
         furnitureCategory = _categoryMongoRepository.save(furnitureCategory);
         handmadeCategory = _categoryMongoRepository.save(handmadeCategory);
+        Category kitchenCategory = new Category("Kitchen");
+        kitchenCategory = _categoryMongoRepository.save(kitchenCategory);
         Category woodCategory = new Category();
         woodCategory.setName("Wood");
         woodCategory = _categoryMongoRepository.save(woodCategory);
 
 
-        //--------------Create a product in three different categories------------------
-        HashSet<Category> categoryList = new HashSet<>(Arrays.asList(furnitureCategory, handmadeCategory, woodCategory));
-        Product leilaDeskProduct = new Product("A Wooden Desk", "This is a comfortable made by Leila!",
-                249.99f, leilaSellerMongo, categoryList);
-        leilaDeskProduct = _productMongoReposirory.save(leilaDeskProduct);
+        //--------------Create a product in two different categories------------------
+        EmbeddedCategory woodEmbedded = new EmbeddedCategory(woodCategory.getId(), woodCategory.getName());
+        EmbeddedCategory handmadeEmbedded = new EmbeddedCategory(handmadeCategory.getId(), handmadeCategory.getName());
+        HashSet<EmbeddedCategory> categoryList = new HashSet<>(Arrays.asList(woodEmbedded, handmadeEmbedded));
+        Product desk = new Product("A Wooden Desk", "Made with thick solid reclaimed wood, Easy to Assemble", 249.99f, seller, categoryList);
+        desk = _productMongoReposirory.save(desk);
 
-        MongoOperations mongoOperation = new MongoTemplate(new MongoClient(), "local");
         Update update = new Update();
-        update.addToSet("productsOfCategory", leilaDeskProduct.getId());
-
-        List<String> ids = leilaDeskProduct.getFallIntoCategories().stream().map(Category::getId).collect(Collectors.toList());
+        update.addToSet("productsOfCategory", desk.getId());
+        List<String> ids = desk.getFallIntoCategories().stream().map(EmbeddedCategory::getId).collect(Collectors.toList());
         Query myUpdateQuery = new Query();
         myUpdateQuery.addCriteria(Criteria.where("_id").in(ids));
         UpdateResult updateResult = mongoOperation.updateMulti(myUpdateQuery, update, Category.class);
-        System.out.println("The count of categories which updated after saving this product is:  " + String.valueOf(updateResult.getMatchedCount()));
+        System.out.println("__________________________________________________________________");
+        System.out.println("The count of categories which updated after saving the desk is:  " + String.valueOf(updateResult.getMatchedCount()));
 
 
+        //--------------Create a product in one category------------------------------
+        EmbeddedCategory furnitureEmbedded = new EmbeddedCategory(furnitureCategory.getId(), furnitureCategory.getName());
+        categoryList = new HashSet<>(Arrays.asList(furnitureEmbedded));
+        Product diningChair = new Product("Antique Dining Chair",
+                "This mid-century fashionable chair is quite comfortable and attractive.", 234.20f, seller, categoryList);
+        diningChair = _productMongoReposirory.save(diningChair);
+
+        update = new Update();
+        update.addToSet("productsOfCategory", diningChair.getId());
+        ids = diningChair.getFallIntoCategories().stream().map(EmbeddedCategory::getId).collect(Collectors.toList());
+        myUpdateQuery = new Query();
+        myUpdateQuery.addCriteria(Criteria.where("_id").in(ids));
+        updateResult = mongoOperation.updateMulti(myUpdateQuery, update, Category.class);
         System.out.println("__________________________________________________________________");
-        System.out.println("Test Mongo repository");
-        System.out.println("Find a seller by first name");
-        _sellerMongoRepository.findByFirstName("Leila").forEach(System.out::println);
+        System.out.println("The count of categories which updated after saving the dining chair is:  " + String.valueOf(updateResult.getMatchedCount()));
+
+
+        //--------------Create a product in three different categories------------------
+        EmbeddedCategory kitchenEmbedded = new EmbeddedCategory(kitchenCategory.getId(), kitchenCategory.getName());
+        categoryList = new HashSet<>(Arrays.asList(handmadeEmbedded, woodEmbedded, kitchenEmbedded));
+        Product spoon = new Product("Bamboo Spoon", "This is more durable than traditional hardwood spoon, safe to use any cookware.", 13.11f, seller, categoryList);
+        spoon = _productMongoReposirory.save(spoon);
+
+        update = new Update();
+        update.addToSet("productsOfCategory", spoon.getId());
+        ids = spoon.getFallIntoCategories().stream().map(EmbeddedCategory::getId).collect(Collectors.toList());
+        myUpdateQuery = new Query();
+        myUpdateQuery.addCriteria(Criteria.where("_id").in(ids));
+        updateResult = mongoOperation.updateMulti(myUpdateQuery, update, Category.class);
         System.out.println("__________________________________________________________________");
+        System.out.println("The count of categories which updated after saving wooden spoon is:  " + String.valueOf(updateResult.getMatchedCount()));
+
 
     }
 
