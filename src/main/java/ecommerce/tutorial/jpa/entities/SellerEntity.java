@@ -21,7 +21,7 @@ public class SellerEntity
     @NotNull
     private String accountId;
 
-    @OneToOne(cascade = CascadeType.ALL, mappedBy = "seller")
+    @OneToOne(cascade = CascadeType.ALL, mappedBy = "seller", orphanRemoval = true)
     private ProfileEntity profile;
 
     public SellerEntity()
@@ -61,6 +61,19 @@ public class SellerEntity
     public void setProfile(ProfileEntity profile)
     {
         this.profile = profile;
+    }
+
+    @Override
+    public String toString()
+    {
+        if (profile == null)
+        {
+            return super.toString();
+        }
+        else
+        {
+            return getProfile().getFirstName() + " " + getProfile().getLastName();
+        }
     }
 }
 
