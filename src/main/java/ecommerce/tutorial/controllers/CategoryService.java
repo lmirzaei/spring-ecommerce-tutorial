@@ -109,32 +109,36 @@ public class CategoryService
 
     //--------------------------------------Update a Category-----------------------------------------------------------
     @PutMapping(path = "/mongo")
-    public ResponseEntity<Category> updateCategoryInMongoDB(@Valid @RequestBody Category category)
+    public ResponseEntity<?> updateCategoryInMongoDB(@Valid @RequestBody Category category)
     {
         if (category == null || category.getId() == null || category.getName() == null || category.getName().trim().isEmpty())
         {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
-        Category categoryDatabase = _categoryMongoRepository.findById(category.getId()).orElse(null);
-        if (categoryDatabase == null)
+        Category categoryInDatabase = _categoryMongoRepository.findById(category.getId()).orElse(null);
+        if (categoryInDatabase == null)
         {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>("This category doesn't exists in MongoDB.", HttpStatus.NOT_FOUND);
         }
 
-        //Update the name of the category in Database using mongoOperation.updateFirst
+        //Update the name of the category in MongoDB Database using mongoOperation.updateFirst
         Update updateCat = new Update();
         updateCat.set("name", category.getName());
         Query queryCat = new Query(Criteria.where("_id").is(category.getId()));
         UpdateResult updateResult = mongoOperation.updateFirst(queryCat, updateCat, Category.class);
-
-
-        //Update all of the products which are in this category.
-        Query where = new Query();
-        where.addCriteria(Criteria.where("fallIntoCategories._id").is(categoryDatabase.getId()));
-        Update update = new Update().set("fallIntoCategories.$.name", category.getName());
-        UpdateResult updateResultA = mongoOperation.updateMulti(where, update, Product.class);
-
-        return new ResponseEntity<>(_categoryMongoRepository.findById(category.getId()).get(), HttpStatus.OK);
+        if (updateResult.getModifiedCount() == 1)
+        {
+            //After updating a category, all of the products which are in this category must be updated manually. The mapping framework doesn't support cascade update!
+            Query where = new Query();
+            where.addCriteria(Criteria.where("fallIntoCategories._id").is(categoryInDatabase.getId()));
+            Update update = new Update().set("fallIntoCategories.$.name", category.getName());
+            updateResult = mongoOperation.updateMulti(where, update, Product.class);
+            return new ResponseEntity<>(_categoryMongoRepository.findById(category.getId()).get(), HttpStatus.OK);
+        }
+        else
+        {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 
     @PutMapping(path = "/mysql")
