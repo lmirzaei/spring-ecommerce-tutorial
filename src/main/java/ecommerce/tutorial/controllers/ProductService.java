@@ -70,7 +70,6 @@ public class ProductService
         return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
-
     @GetMapping(path = "/mysql")
     public ResponseEntity<ProductEntity> getProductFromMysql(@RequestParam(value = "name") String name)
     {
@@ -160,19 +159,21 @@ public class ProductService
 
     //--------------------------------------Update a Product-----------------------------------------------------------
     @PutMapping(path = "/mongo")
-    public ResponseEntity<Product> updateProductInMongoDB(@Valid @RequestBody Product product)
+    public ResponseEntity<?> updateProductInMongoDB(@Valid @RequestBody Product product)
     {
-        if (product == null || product.getId() == null || product.getName() == null || product.getName().trim().isEmpty())
-        {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
+        //TODO: I think I don't need to check id because I used @Valid annotation!
+//        if (product == null || product.getId() == null || product.getName() == null || product.getName().trim().isEmpty())
+//        {
+//            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+//        }
+
         Product productInDatabase = _productMongoRepository.findById(product.getId()).orElse(null);
         if (productInDatabase == null)
         {
-            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>("This seller doesn't exists in MongoDB.", HttpStatus.NOT_FOUND);
         }
 
-        //Update the product by setting each property in the update query.
+        //Update the product by setting each property of this product in a update query.
         Update update = new Update();
         update.set("name", product.getName());
         update.set("description", product.getDescription());
@@ -184,8 +185,6 @@ public class ProductService
             for (EmbeddedCategory category : product.getFallIntoCategories())
             {
                 Category categoryNew = _categoryMongoRepository.findById(category.getId()).orElseThrow(EntityNotFoundException::new);
-                //TODO: How can I update better?????
-                //categoryNew.setProductsOfCategory(new ArrayList<>());
                 categories.add(categoryNew);
             }
             update.set("fallIntoCategories", categories);
@@ -203,7 +202,7 @@ public class ProductService
         }
         catch (EntityNotFoundException e)
         {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>("One of the categories which the product falls into, doesn't exists!", HttpStatus.BAD_REQUEST);
         }
     }
 
