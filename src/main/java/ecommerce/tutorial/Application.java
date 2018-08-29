@@ -55,9 +55,9 @@ public class Application implements CommandLineRunner
     @Autowired
     private CategoryJpaRepository _categoryJpaRepository;
     @Autowired
-    private ProductJpaRepository _productJpaRepository;
+    ProductJpaRepository _productJpaRepository;
     @Autowired
-    private SellerJpaRepository _sellerJpaRepository;
+    SellerJpaRepository _sellerJpaRepository;
 
 
     public static void main(String[] args)
@@ -194,9 +194,5 @@ public class Application implements CommandLineRunner
         updateResult = mongoOperation.updateMulti(myUpdateQuery, update, Category.class);
         System.out.println("__________________________________________________________________");
         System.out.println("The count of categories which updated after saving wooden spoon is:  " + String.valueOf(updateResult.getMatchedCount()));
-
-
     }
-
-
 }
