@@ -41,7 +41,7 @@ public class CategoryService
     private CategoryJpaRepository _categoryJpaRepository;
 
 
-    //----------Retrieve (a) Categories---------------
+    //----------Retrieve Categories-------------
     @GetMapping(path = "/mongo")
     public ResponseEntity<Category> getCategoryFromMongoDB(@RequestParam(value = "name") String name)
     {

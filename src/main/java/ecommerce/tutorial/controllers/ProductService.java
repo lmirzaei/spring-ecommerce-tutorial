@@ -42,7 +42,7 @@ import ecommerce.tutorial.mongodb.repositories.SellerRepository;
 @RequestMapping(path = "/product")
 public class ProductService
 {
-    private MongoOperations mongoOperations = new MongoTemplate(new MongoClient(), "local");//TODO: How to know databaseName?
+    private MongoOperations mongoOperations = new MongoTemplate(new MongoClient(), "local");
     @Autowired
     private ProductRepository _productMongoRepository;
     @Autowired
@@ -57,7 +57,7 @@ public class ProductService
     private CategoryJpaRepository _categoryJpaRepository;
 
 
-    //--------------------------------------Retrieve (a) Products-----------------------------------------------------
+    //----------Retrieve Products----------------
     @GetMapping(path = "/mongo")
     public ResponseEntity<Product> getProductFromMongoDB(@RequestParam(value = "name") String name)
     {
@@ -95,17 +95,6 @@ public class ProductService
     }
 
 
-    //--------------------------------------Create a Product-----------------------------------------------------------
-    @PostMapping(path = "/mongo")
-    public ResponseEntity<Product> addNewProductInMongoDB(@Valid @RequestBody Product product)
-    {
-        if (product == null || product.getName() == null || product.getName().trim().isEmpty())
-        {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
-        Product createdProduct = _productMongoRepository.save(product);
-        return new ResponseEntity<>(createdProduct, HttpStatus.OK);
-    }
 
     @PostMapping(path = "/mysql")
     public Object addNewProductInMysql(@RequestBody ProductEntity product)

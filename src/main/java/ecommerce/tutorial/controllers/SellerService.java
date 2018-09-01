@@ -35,14 +35,14 @@ import ecommerce.tutorial.mongodb.repositories.SellerRepository;
 @RequestMapping(path = "/seller")
 public class SellerService
 {
-    private MongoOperations _mongoOperation = new MongoTemplate(new MongoClient(), "local");//TODO: How to know databaseName?
+    private MongoOperations _mongoOperation = new MongoTemplate(new MongoClient(), "local");
     @Autowired
     private SellerJpaRepository _sellerJpaRepository;
     @Autowired
     private SellerRepository _sellerMongoRepository;
 
 
-    //--------------------------------------Retrieve (a) Sellers------------------------------------------------
+    //----------Retrieve Sellers----------------
     @GetMapping(path = "/mongo")
     public ResponseEntity<?> getSellersFromMongoDB(@RequestParam(value = "firstName") String firstName)
     {
@@ -82,7 +82,7 @@ public class SellerService
         return _sellerJpaRepository.findAll();
     }
 
-    //--------------------------------------Create a Seller-----------------------------------------------------
+    //----------Create a Seller-----------------
     @PostMapping(path = "/mongo")
     public ResponseEntity<Seller> addNewSellerInMongoDB(@Valid @RequestBody Seller seller)
     {
@@ -106,7 +106,7 @@ public class SellerService
         return new ResponseEntity<>(sellerEntity, HttpStatus.OK);
     }
 
-    //--------------------------------------Update a Seller-----------------------------------------------------
+    //----------Update a Seller-----------------
     @PutMapping(path = "/mongo")
     public ResponseEntity<String> updateSellerInMongoDB(@Valid @RequestBody Seller seller)
     {

@@ -128,8 +128,8 @@ public class Application implements CommandLineRunner
         _sellerMongoRepository.save(seller);
 
         System.out.println("__________________________________________________________________");
-        System.out.println("Test Mongo repository");
-        System.out.println("Find a seller by first name");
+        System.out.println("Test MongoDB repository");
+        System.out.println("Find seller(s) by first name");
         _sellerMongoRepository.findByFirstName("Peter").forEach(System.out::println);
         System.out.println("__________________________________________________________________");
 
