@@ -71,14 +71,19 @@ public class Application implements CommandLineRunner
         _categoryJpaRepository.deleteAll();
         _productJpaRepository.deleteAll();
         _sellerJpaRepository.deleteAll();
+        MongoOperations mongoOperation = new MongoTemplate(new MongoClient(), "local");
+        _categoryMongoRepository.deleteAll();
+        _sellerMongoRepository.deleteAll();
+        _productMongoReposirory.deleteAll();
+
 
         //--------------Create two sellers-----------------------------------------
-        SellerEntity judy = new SellerEntity("google account id for Judy is 3243523567678000000");
+        SellerEntity judy = new SellerEntity("Judy's account id = 879");
         ProfileEntity judyProfile = new ProfileEntity(judy, "Judy", "Adams", Gender.Female);
         judyProfile.setBirthday(new SimpleDateFormat("MM/dd/yyyy").parse(("4/12/2010")));
         judy.setProfile(judyProfile);
         judy = _sellerJpaRepository.save(judy);
-        SellerEntity michael = new SellerEntity("google account id for Michael is 9443129034679800011");
+        SellerEntity michael = new SellerEntity("Micheal's account id = 023");
         ProfileEntity michaelProfile = new ProfileEntity(michael, "Michael", "Martin", Gender.Male);
         michael.setProfile(michaelProfile);
         michael = _sellerJpaRepository.save(michael);
@@ -97,34 +102,29 @@ public class Application implements CommandLineRunner
 
         //--------------Create a product in wall decor and art categories--------------
         List<String> imageUrls = new ArrayList<>();
-        imageUrls.add("https://images-na.ssl-images-amazon.com/images/I/81-%2BW4McA%2BL._SL1200_.jpg");
-        imageUrls.add("https://images-na.ssl-images-amazon.com/images/I/811WCp%2BnIaL._SL1500_.jpg");
+        imageUrls.add("https://c.pxhere.com/photos/b1/ab/fantastic_purple_trees_beautiful_jacaranda_trees_pretoria_johannesburg_south_africa-1049314.jpg!d");
+        imageUrls.add("https://c.pxhere.com/photos/90/da/jacaranda_trees_flowering_purple_stand_blossom_spring_plant-922332.jpg!d");
         ProductEntity pictureProductEntity = new ProductEntity("Framed Canvas Wall Art",
-                "Canvas Prints describe Purple Trees, with High Definition Giclee Print On Thick High Quality Canvas",
+                "These Purple Trees, Giclee Print On Thick Canvas",
                 42.34f, imageUrls, michael, new HashSet<>(Arrays.asList(artCategory, wallDecorCategory)));
         pictureProductEntity = _productJpaRepository.save(pictureProductEntity);
 
 
         imageUrls.clear();
         //--------------Create a product in toys and baby categories------------------
-        imageUrls.add("https://images-na.ssl-images-amazon.com/images/I/81-Fd8LV-7L._SX522_.jpg");
-        imageUrls.add("https://images-na.ssl-images-amazon.com/images/I/91zq0dI0tBL._SL1500_.jpg");
+        imageUrls.add("https://c.pxhere.com/photos/ba/a9/still_life_teddy_white_read_book_background_blue-844147.jpg!d");
+        imageUrls.add("https://c.pxhere.com/photos/56/ab/still_life_teddy_white_read_book_background_blue-844152.jpg!d");
         ProductEntity dollProductEntity = new ProductEntity("Teddy Bear",
-                "Ramon tan teddy with realistic paw pad accents and heart shaped tummy",
+                "White teddy with heart shape paw pad accents",
                 24.25f, imageUrls, judy, new HashSet<>(Arrays.asList(babyCategory, toysCategory)));
         dollProductEntity = _productJpaRepository.save(dollProductEntity);
 
 
         ////////////////////////Test MongoDB///////////////////////////////////////////////////
-        MongoOperations mongoOperation = new MongoTemplate(new MongoClient(), "local");
-        _categoryMongoRepository.deleteAll();
-        _sellerMongoRepository.deleteAll();
-        _productMongoReposirory.deleteAll();
-
 
         //--------------Create a seller-----------------------------------------------
         Profile profile = new Profile("Peter", "Smith", Gender.Male);
-        Seller seller = new Seller("Peter's google account id = 23456789", profile);
+        Seller seller = new Seller("Peter's account id = 391", profile);
         _sellerMongoRepository.save(seller);
 
         System.out.println("__________________________________________________________________");
