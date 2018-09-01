@@ -34,15 +34,14 @@ import ecommerce.tutorial.mongodb.repositories.CategoryRepository;
 @RequestMapping(path = "/category")
 public class CategoryService
 {
-    private MongoOperations mongoOperation = new MongoTemplate(new MongoClient(), "local");//TODO: How to know databaseName?
-
+    private MongoOperations mongoOperation = new MongoTemplate(new MongoClient(), "local");
     @Autowired
     private CategoryRepository _categoryMongoRepository;
     @Autowired
     private CategoryJpaRepository _categoryJpaRepository;
 
 
-    //--------------------------------------Retrieve (a) Categories-----------------------------------------------------
+    //----------Retrieve (a) Categories---------------
     @GetMapping(path = "/mongo")
     public ResponseEntity<Category> getCategoryFromMongoDB(@RequestParam(value = "name") String name)
     {
@@ -81,7 +80,7 @@ public class CategoryService
     }
 
 
-    //--------------------------------------Create a Category-----------------------------------------------------------
+    //----------Create a Category---------------
     @PostMapping(path = "/mongo")
     public ResponseEntity<Category> addNewCategoryInMongoDB(@Valid @RequestBody Category category)
     {
@@ -107,7 +106,7 @@ public class CategoryService
     }
 
 
-    //--------------------------------------Update a Category-----------------------------------------------------------
+    //----------Update a Category---------------
     @PutMapping(path = "/mongo")
     public ResponseEntity<?> updateCategoryInMongoDB(@Valid @RequestBody Category category)
     {
