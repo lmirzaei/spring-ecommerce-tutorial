@@ -305,7 +305,7 @@ All the properties which left unannotated will be mapped to columns in tables th
 A one-to-many relationship is where an object (parent/source/owner of relation) has an attribute that stores a collection of another objects (child/target of relation). Here in our sample data model we have one-to-many relationship between Products and Product_Images. It means each product can have a/some image(s). We suppose images save by their URLs. So, the Product entity must have an attribute that stores a collection of strings (URL addresses).
 An ElementCollection can be used to define a one-to-many relationship to an Embeddable object, or a Basic value (like String). We implement relationship between product and its images using @ElementCollection annotation.
 
-```
+```Java
 @ElementCollection
 @CollectionTable(name = "Product_Images", joinColumns = @JoinColumn(name = "product_id", nullable = false))
 @Column(name = "image_URL", nullable = false)
@@ -318,25 +318,26 @@ Another method to define a one-to-many relationship is using @OneToMany annotati
 #### **Many-To-One relationship**
 In a many-to-one relationship an object (parent/source/owner of relation) has an attribute that reference another object (child/target of relation). Here in our sample data in the Product entity we store a reference to the Seller who sells it.
 
-```
+```Java
 @ManyToOne(targetEntity = SellerEntity.class)
 @JoinColumn(name = "seller_id", referencedColumnName = "id")
 @NotNull
 private SellerEntity seller;
 ```
+We don't have a bidirectional relationship , so there isn't a reference to product in the Seller entity.(Should I state these ????/?????? I think it's obvoius some how!!!!!)
 
 #### **One-To-One relationship**
 PSeller has a field (profile) that has a one-to-one relationship with Profile's seller field. That is, each seller has exactly one profile, and vice versa. The @OneToOne annotation defines this relationship. The non-owning side (here Profile \?????here) must uses the mappedBy element of the @OneToOne annotation to specify the relationship property of the owning side (mappedBy = "seller").
 
 Code of SellerEntity as the source of one-to-one association:
-```
+```Java
 @OneToOne(cascade = CascadeType.ALL, mappedBy = "seller")
 private ProfileEntity profile;
 ```
 The source must use cascade element of the @OneToOne annotation to specify which operations must be cascaded to the target of the association.
 
 Code of ProfileEntity as the target of one-to-one association:
-```
+```Java
 @OneToOne
 @JoinColumn
 @MapsId
@@ -377,12 +378,48 @@ The @JsonIgnore annotation is used to prevent infinite recursion problem. Here w
 Notice instantiation of the “products” set in CategoryEntity to determine the state of not being any product in a category that is a set with size 0 in the application.
 
 ## d. Create Data Access Layer for MySQL
-The next thing we're going to do is creating essential repositories to access data in the database. Spring Data JPA provides a repository programming model that starts with an interface per domain object, so we need four repositories for our four data domains that created before. Create a new package called 'repositories' inside 'ecommerce.tutorial' package and add three interfaces called 'CategoryJpaRepository.java', 'ProductJpaRepository.java' and 'SellerJpaRepository.java'.
+The next thing we're going to do is creating essential repositories to access data in the database. Spring Data JPA provides a repository programming model that starts with an interface per domain object, so we need three repositories for our data domains that created before. Create a new package called 'repositories' inside 'ecommerce.tutorial.jpa' package and add three interfaces called 'CategoryJpaRepository.java', 'ProductJpaRepository.java' and 'SellerJpaRepository.java'.
 
-The interfaces must extend JpaRepository or CrudRepository. Also, they must be typed to the domain class and the id type of the domain class.
+The interfaces must extend 'JpaRepository' or 'CrudRepository'. Also, they must be typed to the domain class and the id type of the domain class.
+
+```Java
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import java.util.List;
+
+import ecommerce.tutorial.jpa.entities.CategoryEntity;
+
+public interface CategoryJpaRepository extends JpaRepository<CategoryEntity, Long>
+{
+    List<CategoryEntity> findAllByName(String name);
+}
+```
+
 The implementation of required methods (e.g. save, delete, find, etc.) are provided by Spring Data JPA and will plugged in at runtime, so we need to do almost anything!
 
+```Java
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import ecommerce.tutorial.jpa.entities.SellerEntity;
+
+public interface SellerJpaRepository extends JpaRepository<SellerEntity, Long>
+{
+
+}
+```
 If a function is required, we will need to specify additional methods in repository interfaces ourselves. For example, we need to retrieve categories via the name value (instead of the id value). So, we create a new method definition called 'findAllByName' which get a String value as name and returns an array of categories which have this name.
+
+```Java
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import ecommerce.tutorial.jpa.entities.ProductEntity;
+
+public interface ProductJpaRepository extends JpaRepository<ProductEntity, Long>
+{
+    ProductEntity findByName(String name);
+}
+```
+
 
 # 7. MongoDB
 ##  a. Install MongoDB and create a new database
@@ -527,11 +564,16 @@ private List<String> image_URLs = new ArrayList<>();
 We embed related data (Product and its images) in a single document, so by this design it’s possible to retrieve a Product and its images by one query.
 
 #### **Many-To-One relationship**
-**NOT FINISH**
+In MongoDB data modeling one-to-many and many-to-one relationship can be modeled by storing embedded documents or storing a reference in one side of relationship. As stated in [MongoDB documentation](https://docs.mongodb.com/manual/tutorial/model-referenced-one-to-many-relationships-between-documents/#model-one-to-many-relationships-with-document-references), the growth of the relationships determines where to store the reference. We model the relationship between Product and Seller by storing a reference to the Seller in the Product document because we only have to store one seller id for each product.
+
+```Java
+@DBRef
+private Seller seller;
+```
 
 #### **One-To-One relationship**
 This relationship again can be modeled in two ways using MongoDB (Embed the relationship as a document or store a link to a document in a separate collection). In our sample data model, a seller has a single profile which store information about the seller and a profile has / includes???????? only one seller's information.
-As mentioned before our Profile class doesn’t annotate @Document. It's modeled as embedded document inside thr Seller collection.
+As mentioned before our Profile class doesn’t annotate @Document. It's modeled as embedded document inside the Seller collection.
 
 Code of Seller document stores a Profile document:
 ```Java
@@ -544,18 +586,78 @@ Although in relational database modeling a many-to-many relationship is simple -
 private Set<EmbeddedCategory> fallIntoCategories = new HashSet<>();
 ```
 Each category has lots of products, so we model the relation between Category and Product by storing references to Products in Category.
+
 ```Java
 @DBRef(lazy = true)
 private List<Product> productsOfCategory = new ArrayList<>();
 ```
-The lazy element of @DBRef....................................
+By setting lazy loading element of @DBRef annotation to true, the associated documents of products collection havn't brought unitl on demand.?????????????
 
 ##  d. Create Data Access Layer for MongoDB
-NOT FINISH
+Spring Data MongoDB like Spring Data JPA provides implementation for MongoDB repository interfaces. Again we need three repositories for our data domains. Create a new package called 'repositories' inside 'ecommerce.tutorial.mongodb' package and add three interfaces called 'CategoryRepository.java', 'ProductRepository.java' and 'SellerRepository.java'.
+It's very important not to use the same names as jpa repositories, although the packages are in different paths.
+
+The interfaces must extend 'MongoRepository' and be typed to the domain class and the id type of the domain class.
+
+```Java
+import org.springframework.data.mongodb.repository.MongoRepository;
+
+import java.util.Optional;
+
+import ecommerce.tutorial.mongodb.models.Category;
+
+public interface CategoryRepository extends MongoRepository<Category, String>
+{
+    Category findByName(String categoryName);
+
+    @Override
+    Optional<Category> findById(String id);
+}
+```
+In 'CategoryRepository' we add a method called 'findByName' which find a document with exact name of the category. We also override 'findById' of 'CrudRepository' to accept id with String type.
+
+```Java
+import org.springframework.data.mongodb.repository.MongoRepository;
+import org.springframework.data.mongodb.repository.Query;
+
+import java.util.List;
+import java.util.Optional;
+
+import ecommerce.tutorial.mongodb.models.Seller;
+
+public interface SellerRepository extends MongoRepository<Seller, String>
+{
+    @Query("{'profile.firstName': ?0}")
+    List<Seller> findByFirstName(String firstName);
+
+    @Override
+    Optional<Seller> findById(String s);
+}
+```
+In 'SellerRepository' we add a method 'findByFirstName' which look up in profile of seller using [dot notation](https://docs.mongodb.com/manual/tutorial/query-embedded-documents/#query-on-nested-field). We also override 'findById' of 'CrudRepository'.
+
+```Java
+import org.springframework.data.mongodb.repository.MongoRepository;
+
+import java.util.Optional;
+
+import ecommerce.tutorial.mongodb.models.Product;
+
+public interface ProductRepository extends MongoRepository<Product, String>
+{
+
+    Product findByName(String name);
+
+    @Override
+    Optional<Product> findById(String id);
+}
+
+```
 
 # 8. Insert data using a Spring Boot Application
 Create a java class called 'Application.java' inside 'ecommerce.tutorial' package. This class is where our main method is located. The main method is the standard method that follows the Java convention for an application entry point. We need to annotate the class with @SpringBootApplication, @EnableJpaRepositories and @EnableMongoRepositories. @SpringBootApplication initializes Spring Boot Auto Configuration and Spring application context.
-```
+
+```Java
 @EnableJpaRepositories (basePackages = "ecommerce.tutorial.jpa.repositories")
 @EnableMongoRepositories(basePackages = "ecommerce.tutorial.mongodb.repositories")
 @SpringBootApplication
@@ -567,7 +669,7 @@ public static void main (String [] args)
 }
 }
 ```
-@@EnableJpaRepositories and @EnableMongoRepositories tell the Spring enable repositories and basePackages element tells in which exact path it should looking for repositories interfaces.
+The @EnableJpaRepositories and @EnableMongoRepositories annotations tell the Spring enable repositories and basePackages element tells in which [exact path it should looking for repositories interfaces](https://docs.spring.io/spring-data/jpa/docs/current/reference/html/#repositories.multiple-modules).
 Our main method delegates to Spring Boot's SpringApplication class by calling run. The SpringApplication.run is a static method to launch a Spring Boot Application. We must pass Application.class as an argument to the run method to tell the Spring which the primary component is to run.
 Spring Boot provides "CommandLineRunner" interface which can be used to run some code before the application startup completes. We're going to override a method of this interface to run pieces of code to insert data into our databases at runtime.
 Our Application class implements CommandLineRunner and override the run method as follows:
@@ -608,8 +710,8 @@ Our Application class implements CommandLineRunner and override the run method a
 ```
 
 
-We added an instance of 'MongoOperations' interface. We're going to use the 'updateMulti' method of this interface for updating categories and after inserting a new product.
-
+We added an instance of MongoOperations interface. We're going to use the updateMulti method of this interface for updating categories and after inserting a new product.
+????????????????
 ```Java????????????should I add these code again?
 MongoOperations mongoOperation = new MongoTemplate(new MongoClient(), "local");
 ```
