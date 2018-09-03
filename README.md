@@ -1,13 +1,13 @@
 # 1. Introduction
 In this tutorial we will show how to model different kinds of relationships between data domains using Spring Data JPA and Spring Data MongoDB.
 
-We consider a simple data model for an e-commerce application and create database schemas for both MongoDB and MySQL databases. Then we create three RESTful services to test the databases. We will run our application with Spring Boot and Gradle tool.
+We consider a simple data model for an e-commerce application and create database schemas for both MongoDB and MySQL databases. Then we create three RESTful services to test the databases. We will run our application with Spring Boot and Gradle.
 
-MongoDB is a NoSQL technology which stores the data in JSON like structure documents. As we all know document-based databases has fundamental difference to relational databases. In this tutorial we design the MongoDB schema the same as MySQL schema for the purpose of showing difference.
-So maybe you have better choices in modeling relationships when designing your database schemas.
+MongoDB is a NoSQL technology which stores the data in JSON-like structured documents. As we all know document-based databases have fundamental differences to relational databases. In this tutorial we design the MongoDB schema the same as the MySQL schema for the purpose of showing the differences.
+So you may have better choices in modeling relationships when designing your database schemas.
 
 # 2. Requirements
-The technologies used in this tutorial will be as follows:
+The technologies used in this tutorial are as follows:
 * Spring Boot 2.0.4
 * Spring Data JPA 2.0.9
 * Spring Data MongoDB 2.0.9
@@ -26,45 +26,32 @@ The build.gradle file will look as shown below.
 ![build.gradle](images/build.gradle_image.png)
 
 # 4. Project Structure
-Create folders we'll need for implementing project. We'll have four folders inside 'ecommerce.tutorial' package.
+Create the folders we'll need for implementing project. We'll have four folders inside 'ecommerce.tutorial' package.
 
-*Folder controllers*: We put our RESTful services in this folder.
+*`Controllers` folder*: We put our RESTful services in this folder.
 
-*Folder enums*: We put our enumeration classes in this folder.
+*`Enums` folder*: We put our enumeration classes in this folder.
 
-*Folder jpa*: We put entities and repositories for MySQL database in this folder.
+*`JPA` folder*: We put entities and repositories for MySQL database in this folder.
 
-*Folder mongodb*: We put models and repositories for MongoDB database in this folder.
+*`mongodb` folder*: We put models and repositories for the MongoDB database in this folder.
 
-Add package 'resources' and create 'application.properties' file in this package. We'll write configuration for our databases here in the next sections.
+Add a `resources` package and create an `application.properties` file in this package. We'll write the configuration for our databases here in the next sections.
 
-Add 'Application.java' file inside 'ecommerce.tutorial' package.
-
-
- └── src
-
-	 
-    └── main
-        └── java		
-            └── ecommerce.tutorial
-                └──controllers
-                    └── CategoryService.java
-                    └── ProductServcie.java
-                    └── SellerServcie.java
-
+Add an `Application.java` file inside the `ecommerce.tutorial` package.
 
 ![Project Structure](images/ProjectStructure_image.png)
 
 # 5. A Sample Data Model for the Project
-We suppose a simple e-commerce app which includes Sellers and their Products. We’ll consider these scenarios:
+Suppose we have a simple e-commerce app which includes Sellers and their Products. We’ll consider these scenarios:
 
-A Seller has a Profile (Suppose we’d like to store sellers’ information separately because the Profile will have relation with another class).
+A Seller has a Profile (suppose we’d like to store sellers’ information separately because the Profile will have a relation with another class).
 
 A Seller has some Products for selling.
 
-All Products organized in Categories.
+All Products are organized in Categories.
 
-A Product can fall into a/some Categories.
+A Product can fall into one or more Categories.
 
 Each Category has some Products.
 
@@ -72,26 +59,26 @@ Each Category has some Products.
 
 # 6. MySQL Database
 ##  a. Instal MySQL
-We’ll install MySQL using homebrew:
+We’ll install MySQL using homebrew for macOS:
 
-Download MySQL: brew install mysql
+From a terminal: `brew install mysql`
 
-Start a mysql shell (using root user): *mysql -u root -p*
+Start a mysql shell (using root user): `mysql -u root -p`
 
-Create a new database instance: *create database my_sql_db_ecommerce_tutorial;*
+Create a new database instance: `create database my_sql_db_ecommerce_tutorial;`
 
-Check the databases: *show databases;*
+Check the databases: `show databases;`
 
-Create a new user: *create user 'tutorialuser'@'localhost' identified with mysql_native_password by 'TutorialUser_Password';*
+Create a new user: `create user 'tutorialuser'@'localhost' identified with mysql_native_password by 'TutorialUser_Password';`
 
-Give permission to this user: *grant all privileges on my_sql_db_ecommerce_tutorial.\* to 'tutorialuser'@'localhost';*
+Give permission to this user: `grant all privileges on my_sql_db_ecommerce_tutorial.\* to 'tutorialuser'@'localhost';`
 
-Check the user: *select user, host, show_db_priv from mysql.user;*
+Check the user: `select user, host, show_db_priv from mysql.user;`
 
-Change to the database we just created: *use my_sql_db_ecommerce_tutorial;*
+Change to the database we just created: `use my_sql_db_ecommerce_tutorial;`
 
 ## b. MySQL Configuration in 'application.properties'
-In 'application.properties' file add the following configuration:
+In the `application.properties` file add the following configuration:
 ```
 spring.jpa.hibernate.ddl-auto=update
 spring.datasource.url=jdbc:mysql://localhost:3306/my_sql_db_ecommerce_tutorial
@@ -99,12 +86,12 @@ spring.datasource.username=tutorialuser
 spring.datasource.password=TutorialUser_Password
 ```
 ## c. Create Data Domains using Spring Data JPA
-Let’s now create the first data entity in our relational database called Category. Create a new package called 'entities' inside 'ecommerce.tutorial.jpa' and add a class named 'CategoryEntity.java'.
+Let’s now create the first data entity in our relational database called Category. Create a new package called `entities` inside `ecommerce.tutorial.jpa` and add a class named `CategoryEntity.java`.
 
 Our Category entity has two fields:
 
- - id: It’s the primary key for Category table.
- - name: The name of the Category.
+ - `id`: It’s the primary key for Category table.
+ - `name`: The name of the Category.
 
 ```Java
 @Entity
@@ -130,25 +117,26 @@ public class CategoryEntity
     {
         this.name = name;
     }
+
+    // getters and setters omitted
+}
 ```
-    
-![CategoryEntity](images/CategoryEntity_image.png)
 
-All of our domain models must be annotated with @Entity annotation. 
+All of our domain models must be annotated with the `@Entity` annotation. 
 
-The @Entity annotation used to mark the class as a persistent Java class. All of classes with this annotation will map to a table in database.
+The `@Entity` annotation is used to mark the class as a persistent Java class. Any class with this annotation will map to a table in the database.
 
-The @Table annotation used to name the table in database, which the entity mapped to. If this annotation is not provided, then the class name will be used as the table name.
+The `@Table` annotation used to name the table in the database that the entity is mapped to. If this annotation is not provided, then the class name will be used as the table name.
 
-The @Id annotation tells spring that this field will be used as the primary key of the table.
+The `@Id` annotation tells spring that this field will be used as the primary key of the table.
 
-The @GeneratedValue annotation is used to specify how the primary key should be generated. Here strategy indicate that the id should be generated automatically.
+The `@GeneratedValue` annotation is used to specify how the primary key should be generated. Here `strategy` indicates that the id should be generated automatically.
 
-The @NotNull annotation uses on a parameter that must not be null. We also can use [Nullability Annotations](https://docs.spring.io/spring-data/jpa/docs/current/reference/html/#repositories.nullability.annotations) of spring framework to constraint fields.
+The `@NotNull` annotation is used on a parameter that must not be null. We also can use [Nullability Annotations](https://docs.spring.io/spring-data/jpa/docs/current/reference/html/#repositories.nullability.annotations) from the Spring framework to constrain fields.
 
-All of the data models will have no-argument constructor. The default constructor only exists for the sake of Spring Data modules.
+All of the data models will have a no-argument constructor. The default constructor only exists for the sake of Spring Data modules.
 
-Create 'ProductEntity.java' inside 'ecommerce.tutorial.jpa' package with following contents:
+Create `ProductEntity.java` inside the `ecommerce.tutorial.jpa` package with the following contents:
 ```Java
 @Entity
 @Table(name = "products")
@@ -198,13 +186,11 @@ public class ProductEntity
         this.seller = seller;
         this.fallIntoCategories = fallIntoCategories;
     }
+}
 ```
 Our Product class has four fields for id (primary key), name, description and price of the product.
 
-![ProductEntity](images/ProductEntity_image.png)
-
-
-Create 'SellerEntity.java' inside 'ecommerce.tutorial.jpa' package with following contents:
+Create `SellerEntity.java` inside the `ecommerce.tutorial.jpa` package with the following contents:
 
 ```Java
 @Entity
@@ -229,13 +215,12 @@ public class SellerEntity
     {
         this.accountId = accountId;
     }
+}
 ```
 
-![SellerEntity](images/SellerEntity_image.png)
+Our `Seller` class has two fields. The `id` is the primary key for `sellers` table and `accountId` is a String each seller uses, let say for example for signing-in.
 
-Our Seller class has two fields. The id is the primary key for sellers table and accountId is a String each seller uses let say for example to signing-in.
-
-Create 'ProfileEntity.java' inside 'ecommerce.tutorial.jpa' package.
+Create `ProfileEntity.java` inside the `ecommerce.tutorial.jpa` package.
 
 ```Java
 @Entity
@@ -280,26 +265,25 @@ public class ProfileEntity
         this.lastName = lastName;
         this.gender = gender;
     }
+}
 ```
 
-Our profile contains attributes for Sellers. Here we have seven fields.
+Our `Profile` entity contains attributes for `Sellers`. Here we have seven fields.
 
- - id: It’s the primary key for Profile table.
- - firstName: The first name of a Seller
- - lastName: The last name of a Seller
- - website: The website address of a Seller which is not a required field.
- - birthday
- - address
- - emailAddress
- - gender
+ - `id`: The primary key for the `Profile` table.
+ - `firstName`: The first name of a `Seller`
+ - `lastName`: The last name of a `Seller`
+ - `website`: The website address of a `Seller`, which is not a required field.
+ - `birthday`
+ - `address`
+ - `emailAddress`
+ - `gender`
 
-Notice????????????The point in profile entity for id field is we can make use of Seller ids in Seller table as a primary key in Profile table due to there is one-to-one relationship between Profile and Seller. So, in ProfileEntity we don’t annotate id with @GeneratedValue annotation since the identifier is populated with the identifier of the Seller entity.
+Note that the `id` field in the `Profile` entity is present so that we can use `Seller` `id`s from the `Seller` table as a primary key. This is because there is a one-to-one relationship between `Profile` and `Seller`. So, in `ProfileEntity` we don’t annotate `id` with the `@GeneratedValue` annotation since the field is populated with the identifier of the `Seller` entity.
 
-![ProfileEntity](images/ProfileEntity_image.png)
+The `@Temporal` annotation is used to convert the `Date` type value from Java to a compatible Date format in an SQL database and vice versa. We specified the type of value with the `TemporalType` element since `@Temporal` is used for both `java.util.Date` and `java.util.Calendar` classes.
 
-The @Temporal annotation is used to converts the Date type value from Java to compatible Date format in SQL database and vice versa. We specified type of value by TemporalType element due to @Temporal is used for both java.util.Date and java.util.Calendar classes.
-
-All the properties which left unannotated will be mapped to columns in tables that share the same name and same type as the properties themselves.
+Any properties which are left unannotated will be mapped to columns in tables that share the same name and same type as the properties themselves.
 
 #### **One-To-Many relationship**
 A one-to-many relationship is where an object (parent/source/owner of relation) has an attribute that stores a collection of another objects (child/target of relation). Here in our sample data model we have one-to-many relationship between Products and Product_Images. It means each product can have a/some image(s). We suppose images save by their URLs. So, the Product entity must have an attribute that stores a collection of strings (URL addresses).
