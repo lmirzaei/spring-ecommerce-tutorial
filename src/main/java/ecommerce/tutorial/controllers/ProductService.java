@@ -95,7 +95,7 @@ public class ProductService
     }
 
 
-
+    //----------Create a Product-----------------
     @PostMapping(path = "/mysql")
     public Object addNewProductInMysql(@RequestBody ProductEntity product)
     {
@@ -146,16 +146,10 @@ public class ProductService
     }
 
 
-    //--------------------------------------Update a Product-----------------------------------------------------------
+    //----------Update a Product-----------------
     @PutMapping(path = "/mongo")
-    public ResponseEntity<?> updateProductInMongoDB(@Valid @RequestBody Product product)
+    public ResponseEntity<String> updateProductInMongoDB(@Valid @RequestBody Product product)
     {
-        //TODO: I think I don't need to check id because I used @Valid annotation!
-//        if (product == null || product.getId() == null || product.getName() == null || product.getName().trim().isEmpty())
-//        {
-//            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-//        }
-
         Product productInDatabase = _productMongoRepository.findById(product.getId()).orElse(null);
         if (productInDatabase == null)
         {
@@ -182,7 +176,7 @@ public class ProductService
             if (updateResult.getModifiedCount() == 1)
             {
                 productInDatabase = _productMongoRepository.findByName(product.getName());
-                return new ResponseEntity<>(productInDatabase, HttpStatus.OK);
+                return new ResponseEntity<>("The product updated", HttpStatus.OK);
             }
             else
             {
@@ -198,10 +192,6 @@ public class ProductService
     @PutMapping(path = "/mysql")
     public ResponseEntity<String> updateProductInMysql(@Valid @RequestBody ProductEntity product)
     {
-        if (product == null)
-        {
-            return new ResponseEntity<>("Your request is null!", HttpStatus.BAD_REQUEST);
-        }
         ProductEntity productEntity;
         SellerEntity sellerEntity;
         try
@@ -222,18 +212,10 @@ public class ProductService
         {
             return new ResponseEntity<>("The seller does not exists", HttpStatus.NOT_FOUND);
         }
-        try
-        {
             HashSet<CategoryEntity> categories = new HashSet<>();
             for (CategoryEntity categoryEntity : product.getFallIntoCategories())
             {
                 _categoryJpaRepository.findById(categoryEntity.getId()).ifPresent(categories::add);
-
-
-//                else
-//                {
-//                    throw  new EntityNotFoundException();
-//                }
             }
             if (!categories.isEmpty())
             {
@@ -250,13 +232,5 @@ public class ProductService
             {
                 return new ResponseEntity<>("The product must belongs to at least one category!", HttpStatus.BAD_REQUEST);
             }
-        }
-        //TODO: this part never happen!
-        catch (EntityNotFoundException e)
-        {
-            return new ResponseEntity<>("A category which this product falls into, does not exists", HttpStatus.NOT_FOUND);
-        }
-
-
     }
 }

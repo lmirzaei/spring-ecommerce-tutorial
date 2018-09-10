@@ -82,6 +82,7 @@ public class SellerService
         return _sellerJpaRepository.findAll();
     }
 
+
     //----------Create a Seller-----------------
     @PostMapping(path = "/mongo")
     public ResponseEntity<Seller> addNewSellerInMongoDB(@Valid @RequestBody Seller seller)
@@ -105,6 +106,7 @@ public class SellerService
         sellerEntity = _sellerJpaRepository.save(sellerEntity);
         return new ResponseEntity<>(sellerEntity, HttpStatus.OK);
     }
+
 
     //----------Update a Seller-----------------
     @PutMapping(path = "/mongo")
