@@ -48,7 +48,7 @@ public class CategoryService
         Category categoryMongo = _categoryMongoRepository.findByName(name);
         if (categoryMongo != null)
         {
-            return new ResponseEntity<Category>(categoryMongo, HttpStatus.OK);
+            return new ResponseEntity<>(categoryMongo, HttpStatus.OK);
         }
         System.out.println("There isn't any Category in Mongodb database with name: " + name);
         return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -66,11 +66,11 @@ public class CategoryService
         List<CategoryEntity> categoryEntityList = _categoryJpaRepository.findAllByName(name);
         if (!categoryEntityList.isEmpty())
         {
-            return new ResponseEntity<List<CategoryEntity>>(categoryEntityList, HttpStatus.OK);
+            return new ResponseEntity<>(categoryEntityList, HttpStatus.OK);
         }
         System.out.println("There isn't any Category in MySQL database with name: " + name);
 
-        return new ResponseEntity<String>(new StringBuilder("There isn't any Category in MySQL database with name: ").append(name).toString(), HttpStatus.NOT_FOUND);
+        return new ResponseEntity<>(new StringBuilder("There isn't any Category in MySQL database with name: ").append(name).toString(), HttpStatus.NOT_FOUND);
     }
 
     @GetMapping(path = "/all/mysql")
@@ -108,7 +108,7 @@ public class CategoryService
 
     //----------Update a Category---------------
     @PutMapping(path = "/mongo")
-    public ResponseEntity<?> updateCategoryInMongoDB(@Valid @RequestBody Category category)
+    public ResponseEntity<String> updateCategoryInMongoDB(@Valid @RequestBody Category category)
     {
         if (category == null || category.getId() == null || category.getName() == null || category.getName().trim().isEmpty())
         {
@@ -132,7 +132,7 @@ public class CategoryService
             where.addCriteria(Criteria.where("fallIntoCategories._id").is(categoryInDatabase.getId()));
             Update update = new Update().set("fallIntoCategories.$.name", category.getName());
             updateResult = mongoOperation.updateMulti(where, update, Product.class);
-            return new ResponseEntity<>(_categoryMongoRepository.findById(category.getId()).get(), HttpStatus.OK);
+            return new ResponseEntity<>("The category updated", HttpStatus.OK);
         }
         else
         {
