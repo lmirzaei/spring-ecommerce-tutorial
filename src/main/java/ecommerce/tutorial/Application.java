@@ -48,7 +48,7 @@ public class Application implements CommandLineRunner
     @Autowired
     private CategoryRepository _categoryMongoRepository;
     @Autowired
-    private ProductRepository _productMongoReposirory;
+    private ProductRepository _productMongoRepository;
     @Autowired
     private SellerRepository _sellerMongoRepository;
 
@@ -74,7 +74,7 @@ public class Application implements CommandLineRunner
         MongoOperations mongoOperation = new MongoTemplate(new MongoClient(), "local");
         _categoryMongoRepository.deleteAll();
         _sellerMongoRepository.deleteAll();
-        _productMongoReposirory.deleteAll();
+        _productMongoRepository.deleteAll();
 
 
         //--------------Create two sellers-----------------------------------------
@@ -151,7 +151,7 @@ public class Application implements CommandLineRunner
         EmbeddedCategory handmadeEmbedded = new EmbeddedCategory(handmadeCategory.getId(), handmadeCategory.getName());
         HashSet<EmbeddedCategory> categoryList = new HashSet<>(Arrays.asList(woodEmbedded, handmadeEmbedded));
         Product desk = new Product("A Wooden Desk", "Made with thick solid reclaimed wood, Easy to Assemble", 249.99f, seller, categoryList);
-        desk = _productMongoReposirory.save(desk);
+        desk = _productMongoRepository.save(desk);
 
         Update update = new Update();
         update.addToSet("productsOfCategory", desk.getId());
@@ -168,7 +168,7 @@ public class Application implements CommandLineRunner
         categoryList = new HashSet<>(Arrays.asList(furnitureEmbedded));
         Product diningChair = new Product("Antique Dining Chair",
                 "This mid-century fashionable chair is quite comfortable and attractive.", 234.20f, seller, categoryList);
-        diningChair = _productMongoReposirory.save(diningChair);
+        diningChair = _productMongoRepository.save(diningChair);
 
         update = new Update();
         update.addToSet("productsOfCategory", diningChair.getId());
@@ -184,7 +184,7 @@ public class Application implements CommandLineRunner
         EmbeddedCategory kitchenEmbedded = new EmbeddedCategory(kitchenCategory.getId(), kitchenCategory.getName());
         categoryList = new HashSet<>(Arrays.asList(handmadeEmbedded, woodEmbedded, kitchenEmbedded));
         Product spoon = new Product("Bamboo Spoon", "This is more durable than traditional hardwood spoon, safe to use any cookware.", 13.11f, seller, categoryList);
-        spoon = _productMongoReposirory.save(spoon);
+        spoon = _productMongoRepository.save(spoon);
 
         update = new Update();
         update.addToSet("productsOfCategory", spoon.getId());
