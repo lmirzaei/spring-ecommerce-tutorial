@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.persistence.EntityNotFoundException;
 import javax.validation.Valid;
@@ -34,6 +35,7 @@ import ecommerce.tutorial.jpa.repositories.SellerJpaRepository;
 import ecommerce.tutorial.mongodb.models.Category;
 import ecommerce.tutorial.mongodb.models.EmbeddedCategory;
 import ecommerce.tutorial.mongodb.models.Product;
+import ecommerce.tutorial.mongodb.models.Seller;
 import ecommerce.tutorial.mongodb.repositories.CategoryRepository;
 import ecommerce.tutorial.mongodb.repositories.ProductRepository;
 import ecommerce.tutorial.mongodb.repositories.SellerRepository;
@@ -96,10 +98,56 @@ public class ProductService
 
 
     //----------Create a Product-----------------
+    @PostMapping(path = "/mongo")
+    public ResponseEntity<?> addNewProductInMongoDB(@Valid @RequestBody Product product)
+    {
+        Seller seller;
+        HashSet<EmbeddedCategory> categories = new HashSet<>();
+        try
+        {
+            for (EmbeddedCategory embCat : product.getFallIntoCategories())
+            {
+                Category category = _categoryMongoRepository.findById(embCat.getId()).orElseThrow(EntityNotFoundException::new);
+                categories.add(new EmbeddedCategory(category.getId(), category.getName()));
+            }
+        }
+        catch (EntityNotFoundException e)
+        {
+            return new ResponseEntity<>("One of the categories which the product falls into, doesn't exists!", HttpStatus.BAD_REQUEST);
+        }
+        if (categories.isEmpty())
+        {
+            return new ResponseEntity<>("The product must belongs to at least one category!", HttpStatus.BAD_REQUEST);
+        }
+        try
+        {
+            seller = _sellerMongoRepository.findById(product.getSeller().getId()).orElseThrow(EntityNotFoundException::new);
+        }
+        catch (EntityNotFoundException e)
+        {
+            return new ResponseEntity<>("The seller of this product doesn't exists in MongoDB!", HttpStatus.BAD_REQUEST);
+        }
+        Product productMongoDB = new Product(product.getName(), product.getDescription(), product.getPrice(), seller, categories);
+        productMongoDB = _productMongoRepository.save(productMongoDB);
+        //add a reference to this product in appropriate categories
+        Update update = new Update();
+        update.addToSet("productsOfCategory", productMongoDB.getId());
+        List<String> catIds = productMongoDB.getFallIntoCategories().stream().map(EmbeddedCategory::getId).collect(Collectors.toList());
+        Query query = new Query().addCriteria(Criteria.where("_id").in(catIds));
+        UpdateResult updateResult = mongoOperations.updateMulti(query, update, Category.class);
+        System.out.println("The new product added and " + updateResult.getModifiedCount() + " categories updated.");
+        return new ResponseEntity<>(productMongoDB, HttpStatus.OK);
+    }
+
     @PostMapping(path = "/mysql")
     public Object addNewProductInMysql(@RequestBody ProductEntity product)
     {
+        //Check the constraints
         if (product.getName() == null || product.getName().trim().isEmpty())
+        {
+            return HttpStatus.BAD_REQUEST;
+        }
+        if (product.getImages() == null || product.getImages().size() == 0)
         {
             return HttpStatus.BAD_REQUEST;
         }
@@ -107,7 +155,7 @@ public class ProductService
         SellerEntity seller;
         try
         {
-            seller = _sellerJpaRepository.getOne(product.getSeller().getId());
+            seller = _sellerJpaRepository.findById(product.getSeller().getId()).orElseThrow(EntityNotFoundException::new);
         }
         catch (EntityNotFoundException e)
         {
@@ -119,7 +167,7 @@ public class ProductService
         {
             for (CategoryEntity categoryEntity : product.getFallIntoCategories())
             {
-                categories.add(_categoryJpaRepository.getOne(categoryEntity.getId()));
+                categories.add(_categoryJpaRepository.findById(categoryEntity.getId()).orElseThrow(EntityNotFoundException::new));
             }
         }
         catch (EntityNotFoundException e)
@@ -127,7 +175,7 @@ public class ProductService
             return HttpStatus.BAD_REQUEST;
         }
 
-        if (seller != null && !categories.isEmpty())
+        if (!categories.isEmpty())
         {
             ProductEntity createdProductEntity = new ProductEntity(product.getName(),
                     product.getDescription(),
@@ -153,40 +201,46 @@ public class ProductService
         Product productInDatabase = _productMongoRepository.findById(product.getId()).orElse(null);
         if (productInDatabase == null)
         {
-            return new ResponseEntity<>("This seller doesn't exists in MongoDB.", HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>("This product doesn't exists in MongoDB.", HttpStatus.NOT_FOUND);
         }
-
-        //Update the product by setting each property of this product in a update query.
-        Update update = new Update();
-        update.set("name", product.getName());
-        update.set("description", product.getDescription());
-        update.set("price", product.getPrice());
-        update.set("image_URLs", product.getImage_URLs());
-        HashSet<Category> categories = new HashSet<>();
+        HashSet<EmbeddedCategory> categories = new HashSet<>();
         try
         {
-            for (EmbeddedCategory category : product.getFallIntoCategories())
+            for (EmbeddedCategory embCat : product.getFallIntoCategories())
             {
-                Category categoryNew = _categoryMongoRepository.findById(category.getId()).orElseThrow(EntityNotFoundException::new);
-                categories.add(categoryNew);
-            }
-            update.set("fallIntoCategories", categories);
-            Query query = new Query(Criteria.where("_id").is(product.getId()));
-            UpdateResult updateResult = mongoOperations.updateFirst(query, update, Product.class);
-            if (updateResult.getModifiedCount() == 1)
-            {
-                productInDatabase = _productMongoRepository.findByName(product.getName());
-                return new ResponseEntity<>("The product updated", HttpStatus.OK);
-            }
-            else
-            {
-                return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+                Category category = _categoryMongoRepository.findById(embCat.getId()).orElseThrow(EntityNotFoundException::new);
+                categories.add(new EmbeddedCategory(category.getId(), category.getName()));
             }
         }
         catch (EntityNotFoundException e)
         {
             return new ResponseEntity<>("One of the categories which the product falls into, doesn't exists!", HttpStatus.BAD_REQUEST);
         }
+        if (categories.isEmpty())
+        {
+            return new ResponseEntity<>("The product must belongs to at least one category!", HttpStatus.BAD_REQUEST);
+        }
+        //Update the product by setting each property of this product in a update query.
+        Update update = new Update();
+        update.set("name", product.getName());
+        update.set("description", product.getDescription());
+        update.set("price", product.getPrice());
+        update.set("image_URLs", product.getImage_URLs());
+        update.set("fallIntoCategories", categories);
+        Query query = new Query(Criteria.where("_id").is(product.getId()));
+        UpdateResult updateResult = mongoOperations.updateFirst(query, update, Product.class);
+        if (updateResult.getModifiedCount() == 1)
+        {
+            productInDatabase = _productMongoRepository.findById(product.getId()).get();
+            System.out.println("The \"" + productInDatabase.getName() + "\" product updated!");
+            return new ResponseEntity<>("The product updated", HttpStatus.OK);
+        }
+        else
+        {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
+
     }
 
     @PutMapping(path = "/mysql")
@@ -212,25 +266,25 @@ public class ProductService
         {
             return new ResponseEntity<>("The seller does not exists", HttpStatus.NOT_FOUND);
         }
-            HashSet<CategoryEntity> categories = new HashSet<>();
-            for (CategoryEntity categoryEntity : product.getFallIntoCategories())
-            {
-                _categoryJpaRepository.findById(categoryEntity.getId()).ifPresent(categories::add);
-            }
-            if (!categories.isEmpty())
-            {
-                productEntity.setName(product.getName());
-                productEntity.setDescription(product.getDescription());
-                productEntity.setPrice(product.getPrice());
-                productEntity.setImages(product.getImages());
-                productEntity.setSeller(sellerEntity);
-                productEntity.setFallIntoCategories(categories);
-                _productJpaRepository.save(productEntity);
-                return new ResponseEntity<>("The product updated", HttpStatus.OK);
-            }
-            else
-            {
-                return new ResponseEntity<>("The product must belongs to at least one category!", HttpStatus.BAD_REQUEST);
-            }
+        HashSet<CategoryEntity> categories = new HashSet<>();
+        for (CategoryEntity categoryEntity : product.getFallIntoCategories())
+        {
+            _categoryJpaRepository.findById(categoryEntity.getId()).ifPresent(categories::add);
+        }
+        if (!categories.isEmpty())
+        {
+            productEntity.setName(product.getName());
+            productEntity.setDescription(product.getDescription());
+            productEntity.setPrice(product.getPrice());
+            productEntity.setImages(product.getImages());
+            productEntity.setSeller(sellerEntity);
+            productEntity.setFallIntoCategories(categories);
+            _productJpaRepository.save(productEntity);
+            return new ResponseEntity<>("The product updated", HttpStatus.OK);
+        }
+        else
+        {
+            return new ResponseEntity<>("The product must belongs to at least one category!", HttpStatus.BAD_REQUEST);
+        }
     }
 }
