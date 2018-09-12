@@ -861,7 +861,7 @@ In the first field of `CategoryService` class we create an instance of the `Mong
 
 ??????
 Whenever we update a `category`, the `products` which fall into this `category` must also be updated manually because the Spring framework doesn't support cascading updates.
-??????
+??????Az rooye noteham edit konam in sentences ro
 
 We divided methods in three different sections to handle different HTTP requests.
 The first section is `Retrieve Categories` section. These methods annotated with `@GetMapping` annotation i.e. they will handle HTTP GET requests.
@@ -904,16 +904,16 @@ The `getCategoryFromMongoDB` and `getCategoryFromMysql` methods take a name as a
 
 ```Java
 @PostMapping(path = "/mongo")
-    public ResponseEntity<Category> addNewCategoryInMongoDB(@Valid @RequestBody Category category)
-    {
-        //method body
-    }
+public ResponseEntity<Category> addNewCategoryInMongoDB(@Valid @RequestBody Category category)
+{
+    //method body
+}
 
-    @PostMapping(path = "/mysql")
-    public Object addNewCategoryInMysql(@RequestParam(value = "name") String name)
-    {
-        //method body
-    }
+@PostMapping(path = "/mysql")
+public Object addNewCategoryInMysql(@RequestParam(value = "name") String name)
+{
+    //method body
+}
 ```
 
 Notice the difference between the implementation of creating a new category in two databases. For creating a new category in MongoDB the `addNewCategoryInMongoDB` method take a `Category` object used `@RequestBody`. The `addNewCategoryInMysql` method take a URL query parameter using `@RequestParam`.
@@ -923,19 +923,24 @@ By using `@Valid` annotation before method arguments, we will apply automatic va
 
 ```Java
 @PutMapping(path = "/mongo")
-    public ResponseEntity<String> updateCategoryInMongoDB(@Valid @RequestBody Category category)
-    {
-       //method body
-    }
+public ResponseEntity<String> updateCategoryInMongoDB(@Valid @RequestBody Category category)
+{
+   //method body
+}
 
-    @PutMapping(path = "/mysql")
-    public ResponseEntity<String> updateCategoryInMysql(@Valid @RequestBody CategoryEntity category)
-    {
-        //method body
-    }
+@PutMapping(path = "/mysql")
+public ResponseEntity<String> updateCategoryInMysql(@Valid @RequestBody CategoryEntity category)
+{
+    //method body
+}
 ```
-As mentioned before we're going to use the `updateFirst` and the `updateMulti` method of  `MongoOperations` interface.
-In `updateCategoryInMongoDB` method first we find the matched category using `findById` method of `CategoryRepository`. If the id of input object doesn't match with any category in MongoDB database a message with status 'NOT_FOUND' send to the client. For updating the found category we create an query which sets the `name` field of category to the input value. After we update the `category`, the `products` which fall into this `category` must also be updated because the name of `categories` also store in `products` as embedded documents.
+As mentioned before we're going to use the `updateFirst` and the `updateMulti` method of `MongoOperations` interface.
+
+In `updateCategoryInMongoDB` method at first we find the matched category using `findById` method of `CategoryRepository`. If the id of input object doesn't match with any category in MongoDB database a message with status `NOT_FOUND` send to the client. 
+
+When the matched `category` found, for updating the this `category` we create an query which sets the `name` field of `category` to the input value.
+
+After we update the `category`, the `products` which fall into this `category` must also be updated (because the names of `categories` are also stored in the `products` as embedded documents). We must always update products after updating a `category`.
 
 
 We'll create `SellerService` class like `CategoryService` with the following contents:
@@ -1109,6 +1114,35 @@ public class SellerService
 }
 ```
 
+Like `CategoryService`, the `SellerService` methods divided in three different sections. HTTP GET requests will mapped to methods annotaded with `@GetMapping`. HTTP POST requests will mapped to methods annotaded with `@PostMapping`. HTTP PUT requests will mapped to methods annotaded with `@PutMapping`.
+All HTTP requests start with `/seller` URL patterns, will direct to these methods by Spring as we specifed in `path` element of `@RequestMapping` annotation.
+```Java
+@RestController
+@RequestMapping(path = "/seller")
+public class SellerService
+{
+    //class body
+}
+```
+
+The `updateSellerInMongoDB` method uses the `updateFirst` method of `MongoOperations` interface to update a `Seller` in the MongoDB database.
+
+Notice the update query how sets the fields of `Profile` embedded document using dot notation.
+
+```Java
+Update update = new Update();
+            update.set("accountId", seller.getAccountId());
+            update.set("profile.firstName", seller.getProfile().getFirstName());
+            update.set("profile.lastName", seller.getProfile().getLastName());
+            update.set("profile.website", seller.getProfile().getWebsite());
+            update.set("profile.birthday", seller.getProfile().getBirthday());
+            update.set("profile.address", seller.getProfile().getAddress());
+            update.set("profile.emailAddress", seller.getProfile().getEmailAddress());
+            update.set("profile.gender", seller.getProfile().getGender());
+```
+At the first step of the method we check there is a `Seller` document in the MongoDB database that matches the input iobject. If the `id` field doesn't match, an `EntityNotFoundException` exception will be thrown and in the catch block a messeage with `NOT_FOUND` code will send to the client.
+
+
 We'll create `ProductService` class with the following contents:
 
 ```Java
@@ -1131,178 +1165,326 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import javax.persistence.EntityNotFoundException;
 import javax.validation.Valid;
 
-import ecommerce.tutorial.jpa.entities.ProfileEntity;
+import ecommerce.tutorial.jpa.entities.CategoryEntity;
+import ecommerce.tutorial.jpa.entities.ProductEntity;
 import ecommerce.tutorial.jpa.entities.SellerEntity;
+import ecommerce.tutorial.jpa.repositories.CategoryJpaRepository;
+import ecommerce.tutorial.jpa.repositories.ProductJpaRepository;
 import ecommerce.tutorial.jpa.repositories.SellerJpaRepository;
+import ecommerce.tutorial.mongodb.models.Category;
+import ecommerce.tutorial.mongodb.models.EmbeddedCategory;
+import ecommerce.tutorial.mongodb.models.Product;
 import ecommerce.tutorial.mongodb.models.Profile;
 import ecommerce.tutorial.mongodb.models.Seller;
+import ecommerce.tutorial.mongodb.repositories.CategoryRepository;
+import ecommerce.tutorial.mongodb.repositories.ProductRepository;
 import ecommerce.tutorial.mongodb.repositories.SellerRepository;
 
 @RestController
-@RequestMapping(path = "/seller")
-public class SellerService
+@RequestMapping(path = "/product")
+public class ProductService
 {
-    private MongoOperations _mongoOperation = new MongoTemplate(new MongoClient(), "local");
+    private MongoOperations mongoOperations = new MongoTemplate(new MongoClient(), "local");
+    @Autowired
+    private ProductRepository _productMongoRepository;
+    @Autowired
+    private SellerRepository _sellerMongoRepository;
+    @Autowired
+    private CategoryRepository _categoryMongoRepository;
+    @Autowired
+    private ProductJpaRepository _productJpaRepository;
     @Autowired
     private SellerJpaRepository _sellerJpaRepository;
     @Autowired
-    private SellerRepository _sellerMongoRepository;
+    private CategoryJpaRepository _categoryJpaRepository;
 
 
-    //----------Retrieve Sellers----------------
+    //----------Retrieve Products----------------
     @GetMapping(path = "/mongo")
-    public ResponseEntity<?> getSellersFromMongoDB(@RequestParam(value = "firstName") String firstName)
+    public ResponseEntity<Product> getProductFromMongoDB(@RequestParam(value = "name") String name)
     {
-        List<Seller> sellers = _sellerMongoRepository.findByFirstName(firstName);
-        if (sellers.size() > 0)
+        Product productMongo = _productMongoRepository.findByName(name);
+        if (productMongo != null)
         {
-            System.out.println("There are " + sellers.size() + " sellers with first name " + firstName + " in MongoDB database.");
-            return new ResponseEntity<>(sellers, HttpStatus.OK);
+            return new ResponseEntity<>(productMongo, HttpStatus.OK);
         }
-        return new ResponseEntity<>("There isn't any seller with this name in MongoDB.", HttpStatus.NOT_FOUND);
-    }
-
-    @GetMapping(path = "/all/mongo")
-    public List<Seller> getAllSellersFromMongoDB()
-    {
-        return _sellerMongoRepository.findAll();
+        System.out.println("There isn't any Product in Mongodb database with name: " + name);
+        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
     }
 
     @GetMapping(path = "/mysql")
-    public ResponseEntity<?> getSellerFromMysql(@RequestParam(value = "id") long id)
+    public ResponseEntity<ProductEntity> getProductFromMysql(@RequestParam(value = "name") String name)
     {
-        try
+        ProductEntity product = _productJpaRepository.findByName(name);
+        if (product != null)
         {
-            SellerEntity seller = _sellerJpaRepository.findById(id).orElseThrow(EntityNotFoundException::new);
-            System.out.println("The seller with id " + id + " = " + seller.toString());
-            return new ResponseEntity<>(seller, HttpStatus.OK);
+            return new ResponseEntity<>(product, HttpStatus.OK);
         }
-        catch (EntityNotFoundException e)
-        {
-            return new ResponseEntity<>("There isn't any seller with this name in MySQL.", HttpStatus.NOT_FOUND);
-        }
+        System.out.println("There isn't any Product in MySQL database with name: " + name);
+        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+    }
+
+    @GetMapping(path = "/all/mongo")
+    public List<Product> getAllProductsFromMongoDB()
+    {
+        return _productMongoRepository.findAll();
     }
 
     @GetMapping(path = "/all/mysql")
-    public List<SellerEntity> getAllSellersFromMysql()
+    public List<ProductEntity> getAllProductsFromMysql()
     {
-        return _sellerJpaRepository.findAll();
+        return _productJpaRepository.findAll();
     }
 
-    //----------Create a Seller-----------------
+
+    //----------Create a Product-----------------
     @PostMapping(path = "/mongo")
-    public ResponseEntity<Seller> addNewSellerInMongoDB(@Valid @RequestBody Seller seller)
+    public ResponseEntity<?> addNewProductInMongoDB(@Valid @RequestBody Product product)
     {
-        Profile profile = new Profile(seller.getProfile().getFirstName(), seller.getProfile().getLastName(), seller.getProfile().getGender());
-        Seller sellerMongoDB = new Seller(seller.getAccountId(), profile);
-        sellerMongoDB = _sellerMongoRepository.save(sellerMongoDB);
-        return new ResponseEntity<>(sellerMongoDB, HttpStatus.OK);
-    }
-
-    @PostMapping(path = "/mysql")
-    public ResponseEntity<SellerEntity> addNewSellerInMysql(@Valid @RequestBody SellerEntity seller)
-    {
-        SellerEntity sellerEntity = new SellerEntity(seller.getAccountId());
-        ProfileEntity profile = new ProfileEntity(sellerEntity, seller.getProfile().getFirstName(), seller.getProfile().getLastName(), seller.getProfile().getGender());
-        sellerEntity.setProfile(profile);
-        sellerEntity.getProfile().setWebsite(seller.getProfile().getWebsite());
-        sellerEntity.getProfile().setAddress(seller.getProfile().getAddress());
-        sellerEntity.getProfile().setEmailAddress(seller.getProfile().getEmailAddress());
-        sellerEntity.getProfile().setBirthday(seller.getProfile().getBirthday());
-        sellerEntity = _sellerJpaRepository.save(sellerEntity);
-        return new ResponseEntity<>(sellerEntity, HttpStatus.OK);
-    }
-
-    //----------Update a Seller-----------------
-    @PutMapping(path = "/mongo")
-    public ResponseEntity<String> updateSellerInMongoDB(@Valid @RequestBody Seller seller)
-    {
+        Seller seller;
+        HashSet<EmbeddedCategory> categories = new HashSet<>();
         try
         {
-            Seller sellerInDatabase = _sellerMongoRepository.findById(seller.getId()).orElseThrow(EntityNotFoundException::new);
-            Update update = new Update();
-            update.set("accountId", seller.getAccountId());
-            update.set("profile.firstName", seller.getProfile().getFirstName());
-            update.set("profile.lastName", seller.getProfile().getLastName());
-            update.set("profile.website", seller.getProfile().getWebsite());
-            update.set("profile.birthday", seller.getProfile().getBirthday());
-            update.set("profile.address", seller.getProfile().getAddress());
-            update.set("profile.emailAddress", seller.getProfile().getEmailAddress());
-            update.set("profile.gender", seller.getProfile().getGender());
-
-            Query query = new Query(Criteria.where("_id").is(seller.getId()));
-            UpdateResult updateResult = _mongoOperation.updateFirst(query, update, Seller.class);
-            if (updateResult.getModifiedCount() == 1)
+            for (EmbeddedCategory embCat : product.getFallIntoCategories())
             {
-                sellerInDatabase = _sellerMongoRepository.findById(seller.getId()).orElseThrow(EntityNotFoundException::new);
-                System.out.println("__________________________________________________________________");
-                System.out.println("The document of " + sellerInDatabase.toString() + " updated");
-                return new ResponseEntity<>("The seller updated", HttpStatus.OK);
-            }
-            else
-            {
-                return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+                Category category = _categoryMongoRepository.findById(embCat.getId()).orElseThrow(EntityNotFoundException::new);
+                categories.add(new EmbeddedCategory(category.getId(), category.getName()));
             }
         }
         catch (EntityNotFoundException e)
         {
-            return new ResponseEntity<>("This seller doesn't exists in MongoDB.", HttpStatus.NOT_FOUND);
+            return new ResponseEntity<>("One of the categories which the product falls into, doesn't exists!", HttpStatus.BAD_REQUEST);
         }
+        if (categories.isEmpty())
+        {
+            return new ResponseEntity<>("The product must belongs to at least one category!", HttpStatus.BAD_REQUEST);
+        }
+        try
+        {
+            seller = _sellerMongoRepository.findById(product.getSeller().getId()).orElseThrow(EntityNotFoundException::new);
+        }
+        catch (EntityNotFoundException e)
+        {
+            return new ResponseEntity<>("The seller of this product doesn't exists in MongoDB!", HttpStatus.BAD_REQUEST);
+        }
+        Product productMongoDB = new Product(product.getName(), product.getDescription(), product.getPrice(), seller, categories);
+        productMongoDB = _productMongoRepository.save(productMongoDB);
+        //add a reference to this product in appropriate categories
+        Update update = new Update();
+        update.addToSet("productsOfCategory", productMongoDB.getId());
+        List<String> catIds = productMongoDB.getFallIntoCategories().stream().map(EmbeddedCategory::getId).collect(Collectors.toList());
+        Query query = new Query().addCriteria(Criteria.where("_id").in(catIds));
+        UpdateResult updateResult = mongoOperations.updateMulti(query, update, Category.class);
+        System.out.println("The new product added and " + updateResult.getModifiedCount() + " categories updated.");
+        return new ResponseEntity<>(productMongoDB, HttpStatus.OK);
+    }
+
+    @PostMapping(path = "/mysql")
+    public Object addNewProductInMysql(@RequestBody ProductEntity product)
+    {
+        //Check the constraints
+        if (product.getName() == null || product.getName().trim().isEmpty())
+        {
+            return HttpStatus.BAD_REQUEST;
+        }
+        if (product.getImages() == null || product.getImages().size() == 0)
+        {
+            return HttpStatus.BAD_REQUEST;
+        }
+
+        SellerEntity seller;
+        try
+        {
+            seller = _sellerJpaRepository.findById(product.getSeller().getId()).orElseThrow(EntityNotFoundException::new);
+        }
+        catch (EntityNotFoundException e)
+        {
+            return HttpStatus.BAD_REQUEST;
+        }
+
+        HashSet<CategoryEntity> categories = new HashSet<>();
+        try
+        {
+            for (CategoryEntity categoryEntity : product.getFallIntoCategories())
+            {
+                categories.add(_categoryJpaRepository.findById(categoryEntity.getId()).orElseThrow(EntityNotFoundException::new));
+            }
+        }
+        catch (EntityNotFoundException e)
+        {
+            return HttpStatus.BAD_REQUEST;
+        }
+
+        if (!categories.isEmpty())
+        {
+            ProductEntity createdProductEntity = new ProductEntity(product.getName(),
+                    product.getDescription(),
+                    product.getPrice(),
+                    product.getImages(),
+                    seller,
+                    categories);
+            createdProductEntity = _productJpaRepository.save(createdProductEntity);
+            System.out.println("A new Product created in MySQL database with id: " + createdProductEntity.getId() + "  and name: " + createdProductEntity.getName());
+            return createdProductEntity;
+        }
+        else
+        {
+            return HttpStatus.BAD_REQUEST;
+        }
+    }
+
+
+    //----------Update a Product-----------------
+    @PutMapping(path = "/mongo")
+    public ResponseEntity<String> updateProductInMongoDB(@Valid @RequestBody Product product)
+    {
+        Product productInDatabase = _productMongoRepository.findById(product.getId()).orElse(null);
+        if (productInDatabase == null)
+        {
+            return new ResponseEntity<>("This product doesn't exists in MongoDB.", HttpStatus.NOT_FOUND);
+        }
+        HashSet<EmbeddedCategory> categories = new HashSet<>();
+        try
+        {
+            for (EmbeddedCategory embCat : product.getFallIntoCategories())
+            {
+                Category category = _categoryMongoRepository.findById(embCat.getId()).orElseThrow(EntityNotFoundException::new);
+                categories.add(new EmbeddedCategory(category.getId(), category.getName()));
+            }
+        }
+        catch (EntityNotFoundException e)
+        {
+            return new ResponseEntity<>("One of the categories which the product falls into, doesn't exists!", HttpStatus.BAD_REQUEST);
+        }
+        if (categories.isEmpty())
+        {
+            return new ResponseEntity<>("The product must belongs to at least one category!", HttpStatus.BAD_REQUEST);
+        }
+        //Update the product by setting each property of this product in a update query.
+        Update update = new Update();
+        update.set("name", product.getName());
+        update.set("description", product.getDescription());
+        update.set("price", product.getPrice());
+        update.set("image_URLs", product.getImage_URLs());
+        update.set("fallIntoCategories", categories);
+        Query query = new Query(Criteria.where("_id").is(product.getId()));
+        UpdateResult updateResult = mongoOperations.updateFirst(query, update, Product.class);
+        if (updateResult.getModifiedCount() == 1)
+        {
+            productInDatabase = _productMongoRepository.findById(product.getId()).get();
+            System.out.println("The \"" + productInDatabase.getName() + "\" product updated!");
+            return new ResponseEntity<>("The product updated", HttpStatus.OK);
+        }
+        else
+        {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+
 
     }
 
     @PutMapping(path = "/mysql")
-    public ResponseEntity<String> updateSellerInMysql(@Valid @RequestBody SellerEntity seller)
+    public ResponseEntity<String> updateProductInMysql(@Valid @RequestBody ProductEntity product)
     {
-        SellerEntity sellerEntity = _sellerJpaRepository.findById(seller.getId()).orElse(null);
-        if (sellerEntity == null)
+        ProductEntity productEntity;
+        SellerEntity sellerEntity;
+        try
         {
-            return new ResponseEntity<>("This seller doesn't exists in MySQL.", HttpStatus.NOT_FOUND);
+            productEntity = _productJpaRepository.getOne(product.getId());
+            System.out.println("The product " + productEntity.getName() + " with id " + productEntity.getId() + " is updating...");
         }
-        sellerEntity.setAccountId(seller.getAccountId());
-        sellerEntity.getProfile().setFirstName(seller.getProfile().getFirstName());
-        sellerEntity.getProfile().setLastName(seller.getProfile().getLastName());
-        sellerEntity.getProfile().setWebsite(seller.getProfile().getWebsite());
-        sellerEntity.getProfile().setBirthday(seller.getProfile().getBirthday());
-        sellerEntity.getProfile().setAddress(seller.getProfile().getAddress());
-        sellerEntity.getProfile().setEmailAddress(seller.getProfile().getEmailAddress());
-        sellerEntity.getProfile().setGender(seller.getProfile().getGender());
-        sellerEntity = _sellerJpaRepository.save(sellerEntity);
-        System.out.println("__________________________________________________________________");
-        System.out.println("The row of " + sellerEntity.toString() + " updated");
-        return new ResponseEntity<>("The seller updated", HttpStatus.OK);
+        catch (EntityNotFoundException e)
+        {
+            return new ResponseEntity<>("This product does not exists in MySQL database.", HttpStatus.NOT_FOUND);
+        }
+        try
+        {
+            sellerEntity = _sellerJpaRepository.getOne(product.getSeller().getId());
+            System.out.println("The seller of this product is: " + sellerEntity.toString());
+        }
+        catch (EntityNotFoundException e)
+        {
+            return new ResponseEntity<>("The seller does not exists", HttpStatus.NOT_FOUND);
+        }
+        HashSet<CategoryEntity> categories = new HashSet<>();
+        for (CategoryEntity categoryEntity : product.getFallIntoCategories())
+        {
+            _categoryJpaRepository.findById(categoryEntity.getId()).ifPresent(categories::add);
+        }
+        if (!categories.isEmpty())
+        {
+            productEntity.setName(product.getName());
+            productEntity.setDescription(product.getDescription());
+            productEntity.setPrice(product.getPrice());
+            productEntity.setImages(product.getImages());
+            productEntity.setSeller(sellerEntity);
+            productEntity.setFallIntoCategories(categories);
+            _productJpaRepository.save(productEntity);
+            return new ResponseEntity<>("The product updated", HttpStatus.OK);
+        }
+        else
+        {
+            return new ResponseEntity<>("The product must belongs to at least one category!", HttpStatus.BAD_REQUEST);
+        }
     }
 }
 ```
 
+Like two former controllers all HTTP requests start with `/product` URL patterns, will be handled by this class.
+```Java
+@RestController
+@RequestMapping(path = "/product")
+public class ProductService
+{
+    //class body
+}
+```
 
+The `addNewProductInMysql` method handles HTTP POST requests with `/product/mysql` URL pattern. Notice the lack of an `@Valid` annotation. Here we check the constrains on `product` object in code manually.
 
+```Java
+if (product.getName() == null || product.getName().trim().isEmpty())
+{
+    return HttpStatus.BAD_REQUEST;
+}
+if (product.getImages() == null || product.getImages().size() == 0)
+{
+     return HttpStatus.BAD_REQUEST;
+}
+```
 
+An instance of the `MongoOperations` interface is created and in the `updateProductInMongoDB` method the  `updateFirst` method of this interface is used to update `product`.
 
-????????
-We create an instance of the `MongoOperations` interface, We're going to use the `updateMulti` method of this interface for updating `categories` after inserting a new `product`.
-Whenever we add a new `product`, the `categories` which the `product` belongs to must also be updated.
-???????????
+The `addNewProductInMongoDB` method handles the HTTP POST requests which have `/product/mongo` URL pattern. This method create a new `product` document, saves this document in `products` collection and then adds a reference to this `product` document in the  `categories` which the product is in them?????
+Whenever we add a new `product`, the `categories` which the `product` belongs to must also be updated manually.
+
+```Java
+Update update = new Update();
+update.addToSet("productsOfCategory", productMongoDB.getId());
+List<String> catIds = productMongoDB.getFallIntoCategories().stream().map(EmbeddedCategory::getId).collect(Collectors.toList());
+Query query = new Query().addCriteria(Criteria.where("_id").in(catIds));
+UpdateResult updateResult = mongoOperations.updateMulti(query, update, Category.class);
+```
 
 
 # 10. Populate Databases and Test services
 Spring Boot provides a `CommandLineRunner` interface which can be used to run some code before the application startup completes. We're going to override a method of this interface to run code to insert data into our databases at runtime.
 Our `Application` class implements `CommandLineRunner` and overrides the `run` method.
 
-Add `implements CommandLineRunner`:
-
+Add `implements CommandLineRunner` to your `Application` class:
 ```Java
 @SpringBootApplication
 public class Application implements CommandLineRunner
 ```
 
 Then add an override for `run` method as follows:
-
 ```Java
     @Override
     public void run(String... strings) throws Exception
@@ -1337,13 +1519,13 @@ Then add an override for `run` method as follows:
     }
 }
 ```
-Add an instance of `MongoOperations` interface.
 
+Add an instance of `MongoOperations` interface.
 ```Java
 MongoOperations mongoOperation = new MongoTemplate(new MongoClient(), "local");
 ```
 
-Add the following class variables in 'Application.java':
+Add the following class variables in `Application.java`:
 ```Java
     @Autowired
     private CategoryRepository _categoryMongoRepository;
@@ -1361,137 +1543,134 @@ Add the following class variables in 'Application.java':
 ```
 
 For creating sellers in MySQL database, add the following code:
-
 ```Java
 SellerEntity judy = new SellerEntity("Judy's account id = 879");
-        ProfileEntity judyProfile = new ProfileEntity(judy, "Judy", "Adams", Gender.Female);
-        judyProfile.setBirthday(new SimpleDateFormat("MM/dd/yyyy").parse(("4/12/2010")));
-        judy.setProfile(judyProfile);
-        judy = _sellerJpaRepository.save(judy);
-        SellerEntity michael = new SellerEntity("Micheal's account id = 023");
-        ProfileEntity michaelProfile = new ProfileEntity(michael, "Michael", "Martin", Gender.Male);
-        michael.setProfile(michaelProfile);
-        michael = _sellerJpaRepository.save(michael);
+ProfileEntity judyProfile = new ProfileEntity(judy, "Judy", "Adams", Gender.Female);
+judyProfile.setBirthday(new SimpleDateFormat("MM/dd/yyyy").parse(("4/12/2002")));
+judy.setProfile(judyProfile);
+judy = _sellerJpaRepository.save(judy);
+SellerEntity michael = new SellerEntity("Micheal's account id = 023");
+ProfileEntity michaelProfile = new ProfileEntity(michael, "Michael", "Martin", Gender.Male);
+michael.setProfile(michaelProfile);
+michael = _sellerJpaRepository.save(michael);
 ```
 We'll have two sellers in our MySQL database with full names "Judy Adams" and "Michael Martin".
 
 
 For creating categories in MySQL database, add the following code:
+
 ```Java
 CategoryEntity artCategory = new CategoryEntity("Art");
-        CategoryEntity wallDecorCategory = new CategoryEntity("Wall Decor");
-        CategoryEntity babyCategory = new CategoryEntity("Baby");
-        CategoryEntity toysCategory = new CategoryEntity("Toys");
-        artCategory = _categoryJpaRepository.save(artCategory);
-        wallDecorCategory = _categoryJpaRepository.save(wallDecorCategory);
-        babyCategory = _categoryJpaRepository.save(babyCategory);
-        toysCategory = _categoryJpaRepository.save(toysCategory);
+CategoryEntity wallDecorCategory = new CategoryEntity("Wall Decor");
+CategoryEntity babyCategory = new CategoryEntity("Baby");
+CategoryEntity toysCategory = new CategoryEntity("Toys");
+artCategory = _categoryJpaRepository.save(artCategory);
+wallDecorCategory = _categoryJpaRepository.save(wallDecorCategory);
+babyCategory = _categoryJpaRepository.save(babyCategory);
+toysCategory = _categoryJpaRepository.save(toysCategory);
 ```
-Four categories with names "Art", "Wall Decor", "Baby" and "Toys" will create in MySQL database.
+Four categories with names "Art", "Wall Decor", "Baby" and "Toys" will be created in MySQL database.
 
 For adding products in MySQL database, add the following code:
 ```Java
 List<String> imageUrls = new ArrayList<>();
-        imageUrls.add("https://c.pxhere.com/photos/b1/ab/fantastic_purple_trees_beautiful_jacaranda_trees_pretoria_johannesburg_south_africa-1049314.jpg!d");
-        imageUrls.add("https://c.pxhere.com/photos/90/da/jacaranda_trees_flowering_purple_stand_blossom_spring_plant-922332.jpg!d");
-        ProductEntity pictureProductEntity = new ProductEntity("Framed Canvas Wall Art",
-                "These Purple Trees, Giclee Print On Thick Canvas",
-                42.34f, imageUrls, michael, new HashSet<>(Arrays.asList(artCategory, wallDecorCategory)));
-        pictureProductEntity = _productJpaRepository.save(pictureProductEntity);
+imageUrls.add("https://c.pxhere.com/photos/b1/ab/fantastic_purple_trees_beautiful_jacaranda_trees_pretoria_johannesburg_south_africa-1049314.jpg!d");
+imageUrls.add("https://c.pxhere.com/photos/90/da/jacaranda_trees_flowering_purple_stand_blossom_spring_plant-922332.jpg!d");
+ProductEntity pictureProductEntity = new ProductEntity("Framed Canvas Wall Art", "These Purple Trees, Giclee Print On Thick Canvas", 42.34f, imageUrls, michael, new HashSet<>(Arrays.asList(artCategory, wallDecorCategory)));
+pictureProductEntity = _productJpaRepository.save(pictureProductEntity);
 
-        imageUrls.clear();
+imageUrls.clear();
         
-        imageUrls.add("https://c.pxhere.com/photos/ba/a9/still_life_teddy_white_read_book_background_blue-844147.jpg!d");
-        imageUrls.add("https://c.pxhere.com/photos/56/ab/still_life_teddy_white_read_book_background_blue-844152.jpg!d");
-        ProductEntity dollProductEntity = new ProductEntity("Teddy Bear",
-                "White teddy with heart shape paw pad accents",
-                24.25f, imageUrls, judy, new HashSet<>(Arrays.asList(babyCategory, toysCategory)));
-        dollProductEntity = _productJpaRepository.save(dollProductEntity);
+imageUrls.add("https://c.pxhere.com/photos/ba/a9/still_life_teddy_white_read_book_background_blue-844147.jpg!d");
+imageUrls.add("https://c.pxhere.com/photos/56/ab/still_life_teddy_white_read_book_background_blue-844152.jpg!d");
+ProductEntity dollProductEntity = new ProductEntity("Teddy Bear", "White teddy with heart shape paw pad accents", 24.25f, imageUrls, judy, new HashSet<>(Arrays.asList(babyCategory, toysCategory)));
+dollProductEntity = _productJpaRepository.save(dollProductEntity);
 ```
-There will be two products in product table of MySQL database and four rows in join table product-category
+There will be two products in the product table of MySQL database and four rows in the product-category join table.
 
-For adding a seller in MongoDB database, add the following code:
+For adding a `seller` in MongoDB database, add the following code:
 ```Java
 Profile profile = new Profile("Peter", "Smith", Gender.Male);
-        Seller seller = new Seller("Peter's account id = 391", profile);
-        _sellerMongoRepository.save(seller);
+Seller seller = new Seller("Peter's account id = 391", profile);
+_sellerMongoRepository.save(seller);
 
-        System.out.println("___________________________________");
-        System.out.println("Test MongoDB repository");
-        System.out.println("Find seller(s) by first name");
-        _sellerMongoRepository.findByFirstName("Peter").forEach(System.out::println);
-        System.out.println("___________________________________");
+System.out.println("___________________________________");
+System.out.println("Test MongoDB repository");
+System.out.println("Find seller(s) by first name");
+_sellerMongoRepository.findByFirstName("Peter").forEach(System.out::println);
+System.out.println("___________________________________");
 ```
-We can see how the 'findByFirstName' method in repository work.
+We can see how the `findByFirstName` method in the repository works.
 
-We add four different categories in MongoDB database as follows:
+We add four different `categories` in MongoDB database as follows:
 ```Java
 Category furnitureCategory = new Category("Furniture");
-        Category handmadeCategory = new Category("Handmade");
-        furnitureCategory = _categoryMongoRepository.save(furnitureCategory);
-        handmadeCategory = _categoryMongoRepository.save(handmadeCategory);
-        Category kitchenCategory = new Category("Kitchen");
-        kitchenCategory = _categoryMongoRepository.save(kitchenCategory);
-        Category woodCategory = new Category();
-        woodCategory.setName("Wood");
-        woodCategory = _categoryMongoRepository.save(woodCategory);
+Category handmadeCategory = new Category("Handmade");
+furnitureCategory = _categoryMongoRepository.save(furnitureCategory);
+handmadeCategory = _categoryMongoRepository.save(handmadeCategory);
+Category kitchenCategory = new Category("Kitchen");
+kitchenCategory = _categoryMongoRepository.save(kitchenCategory);
+Category woodCategory = new Category();
+woodCategory.setName("Wood");
+woodCategory = _categoryMongoRepository.save(woodCategory);
 ```
 
-Now we add a product which falls into "Wood and Handmade" categories.
+Now we add a `product` which falls into the "Wood and Handmade" categories.
 ```Java
 EmbeddedCategory woodEmbedded = new EmbeddedCategory(woodCategory.getId(), woodCategory.getName());
-        EmbeddedCategory handmadeEmbedded = new EmbeddedCategory(handmadeCategory.getId(), handmadeCategory.getName());
-        HashSet<EmbeddedCategory> categoryList = new HashSet<>(Arrays.asList(woodEmbedded, handmadeEmbedded));
-        Product desk = new Product("A Wooden Desk", "Made with thick solid reclaimed wood, Easy to Assemble", 249.99f, seller, categoryList);
-        desk = _productMongoReposirory.save(desk);
+EmbeddedCategory handmadeEmbedded = new EmbeddedCategory(handmadeCategory.getId(), handmadeCategory.getName());
+HashSet<EmbeddedCategory> categoryList = new HashSet<>(Arrays.asList(woodEmbedded, handmadeEmbedded));
+Product desk = new Product("A Wooden Desk", "Made with thick solid reclaimed wood, Easy to Assemble", 249.99f, seller, categoryList);
+desk = _productMongoReposirory.save(desk);
 
-        Update update = new Update();
-        update.addToSet("productsOfCategory", desk.getId());
-        List<String> ids = desk.getFallIntoCategories().stream().map(EmbeddedCategory::getId).collect(Collectors.toList());
-        Query myUpdateQuery = new Query();
-        myUpdateQuery.addCriteria(Criteria.where("_id").in(ids));
-        UpdateResult updateResult = mongoOperation.updateMulti(myUpdateQuery, update, Category.class);
-        System.out.println("___________________________________");
-        System.out.println("The count of categories which updated after saving the desk is:  " + String.valueOf(updateResult.getMatchedCount()));
+Update update = new Update();
+update.addToSet("productsOfCategory", desk.getId());
+List<String> ids = desk.getFallIntoCategories().stream().map(EmbeddedCategory::getId).collect(Collectors.toList());
+Query myUpdateQuery = new Query();
+myUpdateQuery.addCriteria(Criteria.where("_id").in(ids));
+UpdateResult updateResult = mongoOperation.updateMulti(myUpdateQuery, update, Category.class);
+System.out.println("___________________________________");
+System.out.println("The count of categories which updated after saving the desk is:  " + String.valueOf(updateResult.getMatchedCount()));
 ```
-Notice that we must update collecton of gategories after each change in product documents because the Spring mapping framework doesn't support cascade update.
 
-Then we add another products in "Furniture, Kitchen" and "Wood, Handmade" categories.
+Notice that the collecton of gategories was updated. After almost any change in product documents we need updating gategories (the Spring mapping framework doesn't cascade updates).
+
+
+Then we add another `products` in the "Furniture, Kitchen" and the "Wood, Handmade" categories.
 ```Java
 EmbeddedCategory furnitureEmbedded = new EmbeddedCategory(furnitureCategory.getId(), furnitureCategory.getName());
-        categoryList = new HashSet<>(Arrays.asList(furnitureEmbedded));
-        Product diningChair = new Product("Antique Dining Chair",
-                "This mid-century fashionable chair is quite comfortable and attractive.", 234.20f, seller, categoryList);
-        diningChair = _productMongoReposirory.save(diningChair);
+categoryList = new HashSet<>(Arrays.asList(furnitureEmbedded));
+Product diningChair = new Product("Antique Dining Chair", "This mid-century fashionable chair is quite comfortable and attractive.", 234.20f, seller, categoryList);
+diningChair = _productMongoReposirory.save(diningChair);
 
-        update = new Update();
-        update.addToSet("productsOfCategory", diningChair.getId());
-        ids = diningChair.getFallIntoCategories().stream().map(EmbeddedCategory::getId).collect(Collectors.toList());
-        myUpdateQuery = new Query();
-        myUpdateQuery.addCriteria(Criteria.where("_id").in(ids));
-        updateResult = mongoOperation.updateMulti(myUpdateQuery, update, Category.class);
-        System.out.println("___________________________________");
-        System.out.println("The count of categories which updated after saving the dining chair is:  " + String.valueOf(updateResult.getMatchedCount()));
+update = new Update();
+update.addToSet("productsOfCategory", diningChair.getId());
+ids = diningChair.getFallIntoCategories().stream().map(EmbeddedCategory::getId).collect(Collectors.toList());
+myUpdateQuery = new Query();
+myUpdateQuery.addCriteria(Criteria.where("_id").in(ids));
+updateResult = mongoOperation.updateMulti(myUpdateQuery, update, Category.class);
+System.out.println("___________________________________");
+System.out.println("The count of categories which updated after saving the dining chair is:  " + String.valueOf(updateResult.getMatchedCount()));
 
 
-        EmbeddedCategory kitchenEmbedded = new EmbeddedCategory(kitchenCategory.getId(), kitchenCategory.getName());
-        categoryList = new HashSet<>(Arrays.asList(handmadeEmbedded, woodEmbedded, kitchenEmbedded));
-        Product spoon = new Product("Bamboo Spoon", "This is more durable than traditional hardwood spoon, safe to use any cookware.", 13.11f, seller, categoryList);
-        spoon = _productMongoReposirory.save(spoon);
+EmbeddedCategory kitchenEmbedded = new EmbeddedCategory(kitchenCategory.getId(), kitchenCategory.getName());
+categoryList = new HashSet<>(Arrays.asList(handmadeEmbedded, woodEmbedded, kitchenEmbedded));
+Product spoon = new Product("Bamboo Spoon", "This is more durable than traditional hardwood spoon, safe to use any cookware.", 13.11f, seller, categoryList);
+spoon = _productMongoReposirory.save(spoon);
 
-        update = new Update();
-        update.addToSet("productsOfCategory", spoon.getId());
-        ids = spoon.getFallIntoCategories().stream().map(EmbeddedCategory::getId).collect(Collectors.toList());
-        myUpdateQuery = new Query();
-        myUpdateQuery.addCriteria(Criteria.where("_id").in(ids));
-        updateResult = mongoOperation.updateMulti(myUpdateQuery, update, Category.class);
-        System.out.println("___________________________________");
-        System.out.println("The count of categories which updated after saving wooden spoon is:  " + String.valueOf(updateResult.getMatchedCount()));
+update = new Update();
+update.addToSet("productsOfCategory", spoon.getId());
+ids = spoon.getFallIntoCategories().stream().map(EmbeddedCategory::getId).collect(Collectors.toList());
+myUpdateQuery = new Query();
+myUpdateQuery.addCriteria(Criteria.where("_id").in(ids));
+updateResult = mongoOperation.updateMulti(myUpdateQuery, update, Category.class);
+System.out.println("___________________________________");
+System.out.println("The count of categories which updated after saving wooden spoon is:  " + String.valueOf(updateResult.getMatchedCount()));
 ```
 
-We'll see the result!
+Run the `Application` and we'll see the result!
 
-![Run the Application](images/ApplicationRun_image.png)
+![Run thr???????????????? Application](images/ApplicationRun_image.png)
 
 To track the changes in databases visually we're going to use [MySQL Workbench](https://dev.mysql.com/downloads/workbench/) and [MongoDB Compass](https://www.mongodb.com/download-center?filter=enterprise&utm_source=google&utm_campaign=Americas_US_CorpEntOnly_Brand_Alpha_FM&utm_keyword=mongodb%20compass&utm_device=c&utm_network=g&utm_medium=cpc&utm_creative=229951671776&utm_matchtype=e&_bt=229951671776&_bk=mongodb%20compass&_bm=e&_bn=g&jmp=search&gclid=EAIaIQobChMIx6Dp7_6Z3QIV1LjACh3ZNQ1dEAAYASAAEgL8Y_D_BwE#compass).
 
