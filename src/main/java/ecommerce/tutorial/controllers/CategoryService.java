@@ -127,11 +127,11 @@ public class CategoryService
         UpdateResult updateResult = mongoOperation.updateFirst(queryCat, updateCat, Category.class);
         if (updateResult.getModifiedCount() == 1)
         {
-            //After updating a category, all of the products which are in this category must be updated manually. The mapping framework doesn't support cascade update!
-            Query where = new Query();
-            where.addCriteria(Criteria.where("fallIntoCategories._id").is(categoryInDatabase.getId()));
+            //After updating a category, all of the products which are in this category must be updated manually.
+            Query query = new Query();
+            query.addCriteria(Criteria.where("fallIntoCategories._id").is(categoryInDatabase.getId()));
             Update update = new Update().set("fallIntoCategories.$.name", category.getName());
-            updateResult = mongoOperation.updateMulti(where, update, Product.class);
+            updateResult = mongoOperation.updateMulti(query, update, Product.class);
             return new ResponseEntity<>("The category updated", HttpStatus.OK);
         }
         else
@@ -149,7 +149,7 @@ public class CategoryService
         }
         try
         {
-            CategoryEntity categoryEntity = _categoryJpaRepository.getOne(category.getId());
+            CategoryEntity categoryEntity = _categoryJpaRepository.findById(category.getId()).orElseThrow(EntityNotFoundException::new);
             categoryEntity.setName(category.getName());
             _categoryJpaRepository.save(categoryEntity);
             return new ResponseEntity<>("The category updated", HttpStatus.OK);
