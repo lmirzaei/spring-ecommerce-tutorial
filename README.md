@@ -665,33 +665,23 @@ Create a java class called `Application` inside the `ecommerce.tutorial` package
 @SpringBootApplication
 public class Application
 {
-public static void main (String [] args)
-{
-    SpringApplication.run(Application.class, args);
-}
+    public static void main (String [] args)
+    {
+        SpringApplication.run(Application.class, args);
+    }
 }
 ```
 
-The `@EnableJpaRepositories` and `@EnableMongoRepositories` annotations tell Spring to enable repositories and the `basePackages` element tells it which [exact path it should look for repository interfaces](https://docs.spring.io/spring-data/jpa/docs/current/reference/html/#repositories.multiple-modules).
+The `@EnableJpaRepositories` and `@EnableMongoRepositories` annotations tell Spring to enable repositories and the `basePackages` element tells it which [exact path it should look in for repository interfaces](https://docs.spring.io/spring-data/jpa/docs/current/reference/html/#repositories.multiple-modules).
 
 Our main method delegates to Spring Boot's `SpringApplication` class by calling run. The `SpringApplication.run` method is a static method used to launch a Spring Boot Application. We must pass `Application.class` as an argument to the run method to tell Spring what the primary component is to run.
 
-
-
 # 9. Build RESTful services to create, retrieve and update data in both databases
-In this section we'll create three REST APIs for saving, retrieving and updating data. Create a folder called 'controllers' inside 'ecommerce.tutorial' and add a file called 'CategoryService.java' in the folder.
-`CategoryService` exposes couple of get requests to retrieve data, post requests to save new data and put requests to update the data.
+In this section we'll create three REST APIs for saving, retrieving and updating data. Create a folder called `controllers` inside `ecommerce.tutorial` and add a file called `CategoryService.java` in the folder.
+`CategoryService` exposes a couple of `GET` requests to retrieve data, `POST` requests to save new data and `PUT` requests to update the data.
 
-We are using Spring @Autowired annotation to wire the CategoryJpaRepository and CategoryRepository into the Category controller.
 
-```Java
-@Autowired
-private CategoryRepository _categoryMongoRepository;
-@Autowired
-private CategoryJpaRepository _categoryJpaRepository;
-```
-
-Add the following content to your CategoryService:
+Add the following content to your `CategoryService`:
 
 ```Java
 import com.mongodb.MongoClient;
@@ -739,38 +729,25 @@ public class CategoryService
     @GetMapping(path = "/mongo")
     public ResponseEntity<Category> getCategoryFromMongoDB(@RequestParam(value = "name") String name)
     {
-        Category categoryMongo = _categoryMongoRepository.findByName(name);
-        if (categoryMongo != null)
-        {
-            return new ResponseEntity<Category>(categoryMongo, HttpStatus.OK);
-        }
-        System.out.println("There isn't any Category in Mongodb database with name: " + name);
-        return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        //method body
     }
 
     @GetMapping(path = "/all/mongo")
     public List<Category> getAllCategoriesFromMongoDB()
     {
-        return _categoryMongoRepository.findAll();
+        //method body
     }
 
     @GetMapping(path = "/mysql")
     public ResponseEntity<?> getCategoryFromMysql(@RequestParam(value = "name") String name)
     {
-        List<CategoryEntity> categoryEntityList = _categoryJpaRepository.findAllByName(name);
-        if (!categoryEntityList.isEmpty())
-        {
-            return new ResponseEntity<List<CategoryEntity>>(categoryEntityList, HttpStatus.OK);
-        }
-        System.out.println("There isn't any Category in MySQL database with name: " + name);
-
-        return new ResponseEntity<String>(new StringBuilder("There isn't any Category in MySQL database with name: ").append(name).toString(), HttpStatus.NOT_FOUND);
+        //method body
     }
 
     @GetMapping(path = "/all/mysql")
     public List<CategoryEntity> getAllCategoriesFromMysql()
     {
-        return _categoryJpaRepository.findAll();
+        //method body
     }
 
 
@@ -778,25 +755,13 @@ public class CategoryService
     @PostMapping(path = "/mongo")
     public ResponseEntity<Category> addNewCategoryInMongoDB(@Valid @RequestBody Category category)
     {
-        if (category == null || category.getName() == null || category.getName().trim().isEmpty())
-        {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
-        Category createdCategory = _categoryMongoRepository.save(category);
-        return new ResponseEntity<>(createdCategory, HttpStatus.OK);
+        //method body
     }
 
     @PostMapping(path = "/mysql")
     public Object addNewCategoryInMysql(@RequestParam(value = "name") String name)
     {
-        if (name == null || name.trim().isEmpty())
-        {
-            return HttpStatus.BAD_REQUEST;
-        }
-        CategoryEntity createdCategoryEntity = new CategoryEntity(name.trim());
-        createdCategoryEntity = _categoryJpaRepository.save(createdCategoryEntity);
-        System.out.println("A new Category created in MySQL database with id: " + createdCategoryEntity.getId() + "  and name: " + createdCategoryEntity.getName());
-        return createdCategoryEntity;
+        //method body
     }
 
 
@@ -804,146 +769,194 @@ public class CategoryService
     @PutMapping(path = "/mongo")
     public ResponseEntity<?> updateCategoryInMongoDB(@Valid @RequestBody Category category)
     {
-        if (category == null || category.getId() == null || category.getName() == null || category.getName().trim().isEmpty())
-        {
-            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
-        }
-        Category categoryInDatabase = _categoryMongoRepository.findById(category.getId()).orElse(null);
-        if (categoryInDatabase == null)
-        {
-            return new ResponseEntity<>("This category doesn't exists in MongoDB.", HttpStatus.NOT_FOUND);
-        }
-
-        //Update the name of the category in MongoDB Database using mongoOperation.updateFirst
-        Update updateCat = new Update();
-        updateCat.set("name", category.getName());
-        Query queryCat = new Query(Criteria.where("_id").is(category.getId()));
-        UpdateResult updateResult = mongoOperation.updateFirst(queryCat, updateCat, Category.class);
-        if (updateResult.getModifiedCount() == 1)
-        {
-            Query where = new Query();
-            where.addCriteria(Criteria.where("fallIntoCategories._id").is(categoryInDatabase.getId()));
-            Update update = new Update().set("fallIntoCategories.$.name", category.getName());
-            updateResult = mongoOperation.updateMulti(where, update, Product.class);
-            return new ResponseEntity<>(_categoryMongoRepository.findById(category.getId()).get(), HttpStatus.OK);
-        }
-        else
-        {
-            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-        }
+        //method body
     }
 
     @PutMapping(path = "/mysql")
     public ResponseEntity<String> updateCategoryInMysql(@Valid @RequestBody CategoryEntity category)
     {
-        if (category == null)
-        {
-            return new ResponseEntity<>("Your request is null!", HttpStatus.BAD_REQUEST);
-        }
-        try
-        {
-            CategoryEntity categoryEntity = _categoryJpaRepository.getOne(category.getId());
-            categoryEntity.setName(category.getName());
-            _categoryJpaRepository.save(categoryEntity);
-            return new ResponseEntity<>("The category updated", HttpStatus.OK);
-        }
-        catch (EntityNotFoundException e)
-        {
-            return new ResponseEntity<>("This category does not exists", HttpStatus.NOT_FOUND);
-        }
+        //method body
     }
 ```
-As we see in the above code, the class has `@RestController` annotation to show this class is a RESTful controller. All HTTP requests are handled by a controller.
+As we see in the above code, the class has a `@RestController` annotation to identify this class as a RESTful controller. All HTTP requests are handled by a controller.
 
-The class also has `@RequestMapping` annotation. The `path` element of this annotation tells the Spring framework all the requests which start with `/category` URL pattern will mapped to this class methods.
+The class also has a `@RequestMapping` annotation. The `path` element of this annotation tells the Spring framework to map all requests which start with a  `/category` URL pattern to this class' methods.
 
-In the first field of `CategoryService` class we create an instance of the `MongoOperations` interface. We're going to use the `updateFirst` and the `updateMulti` methods of this interface for updating a `category` and updating `products` after updating a `category` respectively.
+In the first field of the `CategoryService` class we create an instance of the `MongoOperations` interface. We're going to use the `updateFirst` and the `updateMulti` methods of this interface for updating a `category` and updating `products` after updating a `category` respectively.
 
 ??????
 Whenever we update a `category`, the `products` which fall into this `category` must also be updated manually because the Spring framework doesn't support cascading updates.
-??????Az rooye noteham edit konam in sentences ro
+??????Az rooye noteham edit konam in sentence ro
 
-We divided methods in three different sections to handle different HTTP requests.
-The first section is `Retrieve Categories` section. These methods annotated with `@GetMapping` annotation i.e. they will handle HTTP GET requests.
-There are two methods in `Create a Category` section annotated with `@PostMapping`. They will handle HTTP POST requests.
-The two methods in `Update a Category` section will handle HTTP PUT requests and annotated with `@PutMapping` annotation.
-
-We specify a `path` element for `@GetMapping`, `@PutMapping` and `@PostMapping` annotations to direct Spring to call the method with the appropriate database implementation i.e. requests with URL pattern `/category/mongo` will get data of MongoDB database and requests with `category/mysql` will get data of MySQL database.
-
-
-In the `Retrieve Categories` section of the class we have four methods as follows.
-
+We are using Spring's `@Autowired` annotation to wire the `CategoryJpaRepository` and `CategoryRepository` into the `Category` controller.
 
 ```Java
-    @GetMapping(path = "/mongo")
-    public ResponseEntity<Category> getCategoryFromMongoDB(@RequestParam(value = "name") String name)
-    {
-        //method body
-    }
-
-    @GetMapping(path = "/all/mongo")
-    public List<Category> getAllCategoriesFromMongoDB()
-    {
-        //method body
-    }
-
-    @GetMapping(path = "/mysql")
-    public ResponseEntity<?> getCategoryFromMysql(@RequestParam(value = "name") String name)
-    {
-       //method body
-    }
-
-    @GetMapping(path = "/all/mysql")
-    public List<CategoryEntity> getAllCategoriesFromMysql()
-    {
-        //method body
-    }
+@Autowired
+private CategoryRepository _categoryMongoRepository;
+@Autowired
+private CategoryJpaRepository _categoryJpaRepository;
 ```
 
-The `getCategoryFromMongoDB` and `getCategoryFromMysql` methods take a name as a parameter and look up in the respective database to find the category(ies) which match. The return types of the methods are `ResponseEntity<?>`. If no category is found a message is returned to the client.
 
+We divided the methods into three different sections to handle different HTTP requests.
+The first section is the "*Retrieve Categories*" section. These methods are annotated with a `@GetMapping` annotation i.e. they will handle HTTP `GET` requests.
+There are two methods in the "*Create a Category*" section annotated with `@PostMapping`. They will handle HTTP `POST` requests.
+The two methods in `Update a Category` section will handle HTTP `PUT` requests and are annotated with a `@PutMapping` annotation.
+
+We specify a `path` element for `@GetMapping`, `@PutMapping` and `@PostMapping` annotations to direct Spring to call the method with the appropriate database implementation i.e. requests with a URL pattern matching `/category/mongo` will get data from the MongoDB database and requests with `/category/mysql` will get data from the MySQL database.
+
+
+In the "*Retrieve Categories*" section of the class we have four methods as follows:
+
+```Java
+@GetMapping(path = "/mongo")
+public ResponseEntity<Category> getCategoryFromMongoDB(@RequestParam(value = "name") String name)
+{
+    Category categoryMongo = _categoryMongoRepository.findByName(name);
+    if (categoryMongo != null)
+    {
+        return new ResponseEntity<>(categoryMongo, HttpStatus.OK);
+    }
+    System.out.println("There isn't any Category in Mongodb database with name: " + name);
+    return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+}
+
+@GetMapping(path = "/all/mongo")
+public List<Category> getAllCategoriesFromMongoDB()
+{
+    return _categoryMongoRepository.findAll();
+}
+
+@GetMapping(path = "/mysql")
+public ResponseEntity<?> getCategoryFromMysql(@RequestParam(value = "name") String name)
+{
+    List<CategoryEntity> categoryEntityList = _categoryJpaRepository.findAllByName(name);
+    if (!categoryEntityList.isEmpty())
+    {
+        return new ResponseEntity<>(categoryEntityList, HttpStatus.OK);
+    }
+    System.out.println("There isn't any Category in MySQL database with name: " + name);
+
+    return new ResponseEntity<>(new StringBuilder("There isn't any Category in MySQL database with name: ").append(name).toString(), HttpStatus.NOT_FOUND);
+}
+
+@GetMapping(path = "/all/mysql")
+public List<CategoryEntity> getAllCategoriesFromMysql()
+{
+    return _categoryJpaRepository.findAll();
+}
+```
+
+The `getCategoryFromMongoDB` and `getCategoryFromMysql` methods take a name as a parameter and look up in the respective database to find the category(ies) which match. The return types of the methods are `ResponseEntity<?>`, which allows us to return custom messages with HTTP status codes in case of failure. If no category is found a message is returned to the client.
+
+In the "*Create a Category*" section of the class we have two methods as follows:
 ```Java
 @PostMapping(path = "/mongo")
 public ResponseEntity<Category> addNewCategoryInMongoDB(@Valid @RequestBody Category category)
 {
-    //method body
+    if (category == null || category.getName() == null || category.getName().trim().isEmpty())
+    {
+        return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+    }
+    Category createdCategory = _categoryMongoRepository.save(category);
+    return new ResponseEntity<>(createdCategory, HttpStatus.OK);
 }
 
 @PostMapping(path = "/mysql")
 public Object addNewCategoryInMysql(@RequestParam(value = "name") String name)
 {
-    //method body
+    if (name == null || name.trim().isEmpty())
+    {
+        return HttpStatus.BAD_REQUEST;
+    }
+    CategoryEntity createdCategoryEntity = new CategoryEntity(name.trim());
+    createdCategoryEntity = _categoryJpaRepository.save(createdCategoryEntity);
+    System.out.println("A new Category created in MySQL database with id: " + createdCategoryEntity.getId() + "  and name: " + createdCategoryEntity.getName());
+    return createdCategoryEntity;
 }
 ```
 
-Notice the difference between the implementation of creating a new category in two databases. For creating a new category in MongoDB the `addNewCategoryInMongoDB` method take a `Category` object used `@RequestBody`. The `addNewCategoryInMysql` method take a URL query parameter using `@RequestParam`.
+Notice that input parameters can be either accepted as part of the request body using the `@RequestBody` annotation (as seen in `addNewCategoryInMongoDB`), or as query string parameters using `@RequestParam` with a `value` element identifying the query parameter's key (as seen in `addNewCategoryInMysql`).
 
-By using `@Valid` annotation before method arguments, we will apply automatic validation to check constraints that we defined on the object.
+By using the `@Valid` annotation before method arguments, Spring will apply automatic validation to check constraints that we defined on the object.
 
 
+In the "*Update a Category*" section of the class we have two methods. The first method will be mapped to HTTP `PUT` requests with `/category/mongo` URL patterns and handles update for a `category` in the MongoDB database. The code for `updateCategoryInMongoDB` is as follows:
 ```Java
 @PutMapping(path = "/mongo")
 public ResponseEntity<String> updateCategoryInMongoDB(@Valid @RequestBody Category category)
 {
-   //method body
-}
+    if (category == null || category.getId() == null || category.getName() == null || category.getName().trim().isEmpty())
+    {
+        return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+    }
+    Category categoryInDatabase = _categoryMongoRepository.findById(category.getId()).orElse(null);
+    if (categoryInDatabase == null)
+    {
+        return new ResponseEntity<>("This category doesn't exists in MongoDB.", HttpStatus.NOT_FOUND);
+    }
 
+    //Update the name of the category in MongoDB Database using mongoOperation.updateFirst
+    Update updateCat = new Update();
+    updateCat.set("name", category.getName());
+    Query queryCat = new Query(Criteria.where("_id").is(category.getId()));
+    UpdateResult updateResult = mongoOperation.updateFirst(queryCat, updateCat, Category.class);
+    if (updateResult.getModifiedCount() == 1)
+    {
+        //After updating a category, all of the products which are in this category must be updated manually.
+        Query where = new Query();
+        where.addCriteria(Criteria.where("fallIntoCategories._id").is(categoryInDatabase.getId()));
+        Update update = new Update().set("fallIntoCategories.$.name", category.getName());
+        updateResult = mongoOperation.updateMulti(where, update, Product.class);
+        return new ResponseEntity<>("The category updated", HttpStatus.OK);
+    }
+    else
+    {
+        return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+    }
+}
+```
+
+As mentioned before we're going to use the `updateFirst` and `updateMulti` methods of the `MongoOperations` interface.
+
+In the `updateCategoryInMongoDB` method, we first find the matched category using the `findById` method of `CategoryRepository`. If the `id` of the input object doesn't match with any category in the MongoDB database a message with HTTP status code `NOT_FOUND` is sent to the client. 
+
+If the `category` is found, we create a query which sets the `name` field of `category` to the input value.
+
+After we update the `category`, the `products` which fall into this `category` must also be updated (because the names of `categories` are also stored in the `products` as embedded documents). We must always update `products` after updating a `category`.
+To update `products`, create an update query, add a where criteria using `fallIntoCategories._id` to filter the embedded `categories` which match the specified `category`'s `id`. Then we use an update object to set the `name` field of each to the new category name. The [positional $ operator](https://docs.mongodb.com/manual/reference/operator/update/positional/#up._S_) allows us to reference the embedded documents in `fallIntoCategories` that matched the query.
+
+```Java
+Query query = new Query();
+query.addCriteria(Criteria.where("fallIntoCategories._id").is(categoryInDatabase.getId()));
+Update update = new Update().set("fallIntoCategories.$.name", category.getName());
+updateResult = mongoOperation.updateMulti(query, update, Product.class);
+```
+
+The second method will be mapped to HTTP `PUT` requests with `/category/mysql` URL patterns and handles updates for a `category` in the MySQL database. The code for `updateCategoryInMysql` is as follows:
+```Java
 @PutMapping(path = "/mysql")
 public ResponseEntity<String> updateCategoryInMysql(@Valid @RequestBody CategoryEntity category)
 {
-    //method body
+    if (category == null)
+    {
+        return new ResponseEntity<>("Your request is null!", HttpStatus.BAD_REQUEST);
+    }
+    try
+    {
+        CategoryEntity categoryEntity = _categoryJpaRepository.findById(category.getId()).orElseThrow(EntityNotFoundException::new);
+        categoryEntity.setName(category.getName());
+        _categoryJpaRepository.save(categoryEntity);
+        return new ResponseEntity<>("The category updated", HttpStatus.OK);
+    }
+    catch (EntityNotFoundException e)
+    {
+        return new ResponseEntity<>("This category does not exists", HttpStatus.NOT_FOUND);
+    }
 }
 ```
-As mentioned before we're going to use the `updateFirst` and the `updateMulti` method of `MongoOperations` interface.
 
-In `updateCategoryInMongoDB` method at first we find the matched category using `findById` method of `CategoryRepository`. If the id of input object doesn't match with any category in MongoDB database a message with status `NOT_FOUND` send to the client. 
-
-When the matched `category` found, for updating the this `category` we create an query which sets the `name` field of `category` to the input value.
-
-After we update the `category`, the `products` which fall into this `category` must also be updated (because the names of `categories` are also stored in the `products` as embedded documents). We must always update products after updating a `category`.
-
-
-We'll create `SellerService` class like `CategoryService` with the following contents:
+We'll create a `SellerService` class like `CategoryService` with the following contents:
 
 ```Java
 import com.mongodb.MongoClient;
@@ -1056,38 +1069,7 @@ public class SellerService
     @PutMapping(path = "/mongo")
     public ResponseEntity<String> updateSellerInMongoDB(@Valid @RequestBody Seller seller)
     {
-        try
-        {
-            Seller sellerInDatabase = _sellerMongoRepository.findById(seller.getId()).orElseThrow(EntityNotFoundException::new);
-            Update update = new Update();
-            update.set("accountId", seller.getAccountId());
-            update.set("profile.firstName", seller.getProfile().getFirstName());
-            update.set("profile.lastName", seller.getProfile().getLastName());
-            update.set("profile.website", seller.getProfile().getWebsite());
-            update.set("profile.birthday", seller.getProfile().getBirthday());
-            update.set("profile.address", seller.getProfile().getAddress());
-            update.set("profile.emailAddress", seller.getProfile().getEmailAddress());
-            update.set("profile.gender", seller.getProfile().getGender());
-
-            Query query = new Query(Criteria.where("_id").is(seller.getId()));
-            UpdateResult updateResult = _mongoOperation.updateFirst(query, update, Seller.class);
-            if (updateResult.getModifiedCount() == 1)
-            {
-                sellerInDatabase = _sellerMongoRepository.findById(seller.getId()).orElseThrow(EntityNotFoundException::new);
-                System.out.println("__________________________________________________________________");
-                System.out.println("The document of " + sellerInDatabase.toString() + " updated");
-                return new ResponseEntity<>("The seller updated", HttpStatus.OK);
-            }
-            else
-            {
-                return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
-            }
-        }
-        catch (EntityNotFoundException e)
-        {
-            return new ResponseEntity<>("This seller doesn't exists in MongoDB.", HttpStatus.NOT_FOUND);
-        }
-
+        //method body
     }
 
     @PutMapping(path = "/mysql")
@@ -1114,8 +1096,8 @@ public class SellerService
 }
 ```
 
-Like `CategoryService`, the `SellerService` methods divided in three different sections. HTTP GET requests will mapped to methods annotaded with `@GetMapping`. HTTP POST requests will mapped to methods annotaded with `@PostMapping`. HTTP PUT requests will mapped to methods annotaded with `@PutMapping`.
-All HTTP requests start with `/seller` URL patterns, will direct to these methods by Spring as we specifed in `path` element of `@RequestMapping` annotation.
+Like `CategoryService`, the `SellerService` methods are divided into three different sections. HTTP `GET` requests will be mapped to methods annotated with `@GetMapping`. HTTP `POST` requests will be mapped to methods annotated with `@PostMapping`. HTTP `PUT` requests will be mapped to methods annotated with `@PutMapping`.
+All HTTP requests with `/seller` URL patterns, will be directed to these methods by Spring as we specifed in `path` element of `@RequestMapping` annotation.
 ```Java
 @RestController
 @RequestMapping(path = "/seller")
@@ -1125,25 +1107,65 @@ public class SellerService
 }
 ```
 
-The `updateSellerInMongoDB` method uses the `updateFirst` method of `MongoOperations` interface to update a `Seller` in the MongoDB database.
+The `updateSellerInMongoDB` method uses the `updateFirst` method of the `MongoOperations` interface to update a `Seller` in the MongoDB database.
+```Java
+@PutMapping(path = "/mongo")
+public ResponseEntity<String> updateSellerInMongoDB(@Valid @RequestBody Seller seller)
+{
+    try
+    {
+        Seller sellerInDatabase = _sellerMongoRepository.findById(seller.getId()).orElseThrow(EntityNotFoundException::new);
+        Update update = new Update();
+        update.set("accountId", seller.getAccountId());
+        update.set("profile.firstName", seller.getProfile().getFirstName());
+        update.set("profile.lastName", seller.getProfile().getLastName());
+        update.set("profile.website", seller.getProfile().getWebsite());
+        update.set("profile.birthday", seller.getProfile().getBirthday());
+        update.set("profile.address", seller.getProfile().getAddress());
+        update.set("profile.emailAddress", seller.getProfile().getEmailAddress());
+        update.set("profile.gender", seller.getProfile().getGender());
 
-Notice the update query how sets the fields of `Profile` embedded document using dot notation.
+        Query query = new Query(Criteria.where("_id").is(seller.getId()));
+        UpdateResult updateResult = _mongoOperation.updateFirst(query, update, Seller.class);
+        if (updateResult.getModifiedCount() == 1)
+        {
+            sellerInDatabase = _sellerMongoRepository.findById(seller.getId()).orElseThrow(EntityNotFoundException::new);
+            System.out.println("__________________________________________________________________");
+            System.out.println("The document of " + sellerInDatabase.toString() + " updated");
+            return new ResponseEntity<>("The seller updated", HttpStatus.OK);
+        }
+        else
+        {
+            return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+    catch (EntityNotFoundException e)
+    {
+        return new ResponseEntity<>("This seller doesn't exists in MongoDB.", HttpStatus.NOT_FOUND);
+    }
+}
+```
+First, we check if there is a `Seller` document in the MongoDB database that matches the input iobject. If the `id` field doesn't match, an `EntityNotFoundException` exception will be thrown and in the catch block a message with a `NOT_FOUND` HTTP status code will sent to the client.
+```Java
+Seller sellerInDatabase = _sellerMongoRepository.findById(seller.getId()).orElseThrow(EntityNotFoundException::new);
+```
 
+
+Notice how the update query sets the fields of the `Profile` embedded document using dot notation.
 ```Java
 Update update = new Update();
-            update.set("accountId", seller.getAccountId());
-            update.set("profile.firstName", seller.getProfile().getFirstName());
-            update.set("profile.lastName", seller.getProfile().getLastName());
-            update.set("profile.website", seller.getProfile().getWebsite());
-            update.set("profile.birthday", seller.getProfile().getBirthday());
-            update.set("profile.address", seller.getProfile().getAddress());
-            update.set("profile.emailAddress", seller.getProfile().getEmailAddress());
-            update.set("profile.gender", seller.getProfile().getGender());
+update.set("accountId", seller.getAccountId());
+update.set("profile.firstName", seller.getProfile().getFirstName());
+update.set("profile.lastName", seller.getProfile().getLastName());
+update.set("profile.website", seller.getProfile().getWebsite());
+update.set("profile.birthday", seller.getProfile().getBirthday());
+update.set("profile.address", seller.getProfile().getAddress());
+update.set("profile.emailAddress", seller.getProfile().getEmailAddress());
+update.set("profile.gender", seller.getProfile().getGender());
 ```
-At the first step of the method we check there is a `Seller` document in the MongoDB database that matches the input iobject. If the `id` field doesn't match, an `EntityNotFoundException` exception will be thrown and in the catch block a messeage with `NOT_FOUND` code will send to the client.
 
 
-We'll create `ProductService` class with the following contents:
+We'll create a `ProductService` class with the following contents:
 
 ```Java
 import com.mongodb.MongoClient;
@@ -1437,7 +1459,7 @@ public class ProductService
 }
 ```
 
-Like two former controllers all HTTP requests start with `/product` URL patterns, will be handled by this class.
+Like the two previous controllers all HTTP requests with `/product` URL patterns, will be handled by this class.
 ```Java
 @RestController
 @RequestMapping(path = "/product")
@@ -1447,7 +1469,7 @@ public class ProductService
 }
 ```
 
-The `addNewProductInMysql` method handles HTTP POST requests with `/product/mysql` URL pattern. Notice the lack of an `@Valid` annotation. Here we check the constrains on `product` object in code manually.
+The `addNewProductInMysql` method handles HTTP `POST` requests with `/product/mysql` URL patterns. Notice the lack of an `@Valid` annotation. Here we check the constraints on the `product` object in code manually.
 
 ```Java
 if (product.getName() == null || product.getName().trim().isEmpty())
@@ -1460,9 +1482,9 @@ if (product.getImages() == null || product.getImages().size() == 0)
 }
 ```
 
-An instance of the `MongoOperations` interface is created and in the `updateProductInMongoDB` method the  `updateFirst` method of this interface is used to update `product`.
+An instance of the `MongoOperations` interface is created and in the `updateProductInMongoDB` method, the  `updateFirst` method of this interface is used to update `product`.
 
-The `addNewProductInMongoDB` method handles the HTTP POST requests which have `/product/mongo` URL pattern. This method create a new `product` document, saves this document in `products` collection and then adds a reference to this `product` document in the  `categories` which the product is in them?????
+The `addNewProductInMongoDB` method handles the HTTP `POST` requests which have `/product/mongo` URL patterns. This method creates a new `product` document, saves it in the `products` collection and then adds a reference to this `product` document in the `category` documents to which the `product` belongs.
 Whenever we add a new `product`, the `categories` which the `product` belongs to must also be updated manually.
 
 ```Java
@@ -1475,7 +1497,7 @@ UpdateResult updateResult = mongoOperations.updateMulti(query, update, Category.
 
 
 # 10. Populate Databases and Test services
-Spring Boot provides a `CommandLineRunner` interface which can be used to run some code before the application startup completes. We're going to override a method of this interface to run code to insert data into our databases at runtime.
+Spring Boot provides a `CommandLineRunner` interface which can be used to run some code before application startup completes. We're going to override a method of this interface to run code to insert data into our databases at runtime.
 Our `Application` class implements `CommandLineRunner` and overrides the `run` method.
 
 Add `implements CommandLineRunner` to your `Application` class:
@@ -1542,7 +1564,7 @@ Add the following class variables in `Application.java`:
     private SellerJpaRepository _sellerJpaRepository;
 ```
 
-For creating sellers in MySQL database, add the following code:
+For creating sellers in the MySQL database, add the following code:
 ```Java
 SellerEntity judy = new SellerEntity("Judy's account id = 879");
 ProfileEntity judyProfile = new ProfileEntity(judy, "Judy", "Adams", Gender.Female);
@@ -1557,7 +1579,7 @@ michael = _sellerJpaRepository.save(michael);
 We'll have two sellers in our MySQL database with full names "Judy Adams" and "Michael Martin".
 
 
-For creating categories in MySQL database, add the following code:
+For creating categories in the MySQL database, add the following code:
 
 ```Java
 CategoryEntity artCategory = new CategoryEntity("Art");
@@ -1571,7 +1593,7 @@ toysCategory = _categoryJpaRepository.save(toysCategory);
 ```
 Four categories with names "Art", "Wall Decor", "Baby" and "Toys" will be created in MySQL database.
 
-For adding products in MySQL database, add the following code:
+For adding products in the MySQL database, add the following code:
 ```Java
 List<String> imageUrls = new ArrayList<>();
 imageUrls.add("https://c.pxhere.com/photos/b1/ab/fantastic_purple_trees_beautiful_jacaranda_trees_pretoria_johannesburg_south_africa-1049314.jpg!d");
@@ -1586,9 +1608,9 @@ imageUrls.add("https://c.pxhere.com/photos/56/ab/still_life_teddy_white_read_boo
 ProductEntity dollProductEntity = new ProductEntity("Teddy Bear", "White teddy with heart shape paw pad accents", 24.25f, imageUrls, judy, new HashSet<>(Arrays.asList(babyCategory, toysCategory)));
 dollProductEntity = _productJpaRepository.save(dollProductEntity);
 ```
-There will be two products in the product table of MySQL database and four rows in the product-category join table.
+There will be two products in the product table of the MySQL database and four rows in the product-category join table.
 
-For adding a `seller` in MongoDB database, add the following code:
+For adding a `seller` in the MongoDB database, add the following code:
 ```Java
 Profile profile = new Profile("Peter", "Smith", Gender.Male);
 Seller seller = new Seller("Peter's account id = 391", profile);
@@ -1602,7 +1624,7 @@ System.out.println("___________________________________");
 ```
 We can see how the `findByFirstName` method in the repository works.
 
-We add four different `categories` in MongoDB database as follows:
+We add four different `categories` in the MongoDB database as follows:
 ```Java
 Category furnitureCategory = new Category("Furniture");
 Category handmadeCategory = new Category("Handmade");
@@ -1633,10 +1655,10 @@ System.out.println("___________________________________");
 System.out.println("The count of categories which updated after saving the desk is:  " + String.valueOf(updateResult.getMatchedCount()));
 ```
 
-Notice that the collecton of gategories was updated. After almost any change in product documents we need updating gategories (the Spring mapping framework doesn't cascade updates).
+Notice that the collecton of categories was updated. After almost any change in product documents we need to update categories (the Spring mapping framework doesn't cascade updates).
 
 
-Then we add another `products` in the "Furniture, Kitchen" and the "Wood, Handmade" categories.
+Then we add more `products` in the "Furniture, Kitchen" and the "Wood, Handmade" categories.
 ```Java
 EmbeddedCategory furnitureEmbedded = new EmbeddedCategory(furnitureCategory.getId(), furnitureCategory.getName());
 categoryList = new HashSet<>(Arrays.asList(furnitureEmbedded));
@@ -1670,22 +1692,22 @@ System.out.println("The count of categories which updated after saving wooden sp
 
 Run the `Application` and we'll see the result!
 
-![Run thr???????????????? Application](images/ApplicationRun_image.png)
+![Run the Application](images/ApplicationRun_image.png)
 
-To track the changes in databases visually we're going to use [MySQL Workbench](https://dev.mysql.com/downloads/workbench/) and [MongoDB Compass](https://www.mongodb.com/download-center?filter=enterprise&utm_source=google&utm_campaign=Americas_US_CorpEntOnly_Brand_Alpha_FM&utm_keyword=mongodb%20compass&utm_device=c&utm_network=g&utm_medium=cpc&utm_creative=229951671776&utm_matchtype=e&_bt=229951671776&_bk=mongodb%20compass&_bm=e&_bn=g&jmp=search&gclid=EAIaIQobChMIx6Dp7_6Z3QIV1LjACh3ZNQ1dEAAYASAAEgL8Y_D_BwE#compass).
+To track the changes in the databases visually we're going to use [MySQL Workbench](https://dev.mysql.com/downloads/workbench/) and [MongoDB Compass](https://www.mongodb.com/download-center?filter=enterprise&utm_source=google&utm_campaign=Americas_US_CorpEntOnly_Brand_Alpha_FM&utm_keyword=mongodb%20compass&utm_device=c&utm_network=g&utm_medium=cpc&utm_creative=229951671776&utm_matchtype=e&_bt=229951671776&_bk=mongodb%20compass&_bm=e&_bn=g&jmp=search&gclid=EAIaIQobChMIx6Dp7_6Z3QIV1LjACh3ZNQ1dEAAYASAAEgL8Y_D_BwE#compass).
 
 
-This image is a Workbench window where we can see MySQL database chenges:
+Here is a Workbench window where we can see the MySQL database chenges:
 
 ![Workbench](images/Workbench_image.png)
 
-This image is a MongoDB Compass window where we can see MongoDB database chenges:
+Here is a MongoDB Compass window where we can see the MongoDB database chenges:
 
 ![MongoDB Compass](images/MongoCompass_image.png)
 
 
-We can use a tool like Insomnia to send requests and test our services.
-Below the picture shows how we can execute our requests to Category service from Insomnia.
+We can use a tool like [Insomnia](https://insomnia.rest) to send requests and test our services.
+Below the picture shows how we can execute our requests to the Category service from Insomnia.
 
 ![Insomnia_CategoryService.Get](images/InsomniaGetCategory_image.png)
 
