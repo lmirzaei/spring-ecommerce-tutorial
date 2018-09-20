@@ -359,9 +359,6 @@ The `CategoryEntity` is considered the target side of the relationship and must 
 
 The `@JsonIgnore` annotation is used to prevent an infinite recursion problem. Here we have a bidirectional relationship between `ProductEntity` and `CategoryEntitiy`. When we want to fetch a `product` from our REST controller in our client, this bidirectional relationship will cause a stack overflow error. In order to avoid the infinite loop one of the two sides of the relationship should not be serialized. We don’t want to get `products` of `categories`, so we declare the `products` property in `CategoryEntity` with `@JsonIgnore` to omit them from serialization. You can study other methods to deal with bidirectional relationships [here](https://www.baeldung.com/jackson-bidirectional-relationships-and-infinite-recursion) and [here](http://keenformatics.blogspot.com/2013/08/how-to-solve-json-infinite-recursion.html).
 
-?????????????????
-**Notice the initialization of the `products` set in `CategoryEntity` to an empty set to indicate indicate the state of not having any products in a category.**
-?????????????????
 
 ## d. Create the Data Access Layer for MySQL
 The next thing we're going to do is creating the essential repositories to access data in the database. Spring Data JPA provides a repository programming model that starts with an interface per domain object, so we need three repositories for our data domains that we created before. Create a new package called `repositories` inside `ecommerce.tutorial.jpa` package and add three interfaces called `CategoryJpaRepository`, `ProductJpaRepository` and `SellerJpaRepository`.
@@ -593,10 +590,18 @@ private Profile profile;
 ```
 
 #### **Many-To-Many relationship**
-Although in relational database modeling a many-to-many relationship is simple - we only need a join table between the two tables which own the relationship - there are several ways to implement many-to-many in MongoDB. Consider this scenario: Each product falls into a few categories, so we model the relation between `Product` and `Category` with embedded documents. We want to store the `id` and `name` of a `category` in `Product`'s document. To do this, we create a new class called `EmbeddedCategory` which has two fields, `id` and `name`. We denormalize `Product` documents by embedding the `id` and `name` of `categories`. That way we can retrieve all of the `categories` for a `product` without having to perform a join between `Product` and `Category` in the applicaton. Denormalization enables faster reads at the cost of less consistency.
+Although in relational database modeling a many-to-many relationship is simple - we only need a join table between the two tables which own the relationship - there are several ways to implement many-to-many in MongoDB. Consider this scenario:
+Each product falls into a few categories, so we model the relation between `Product` and `Category` with embedded documents.
+
+We want to store the `id` and `name` of a `category` in `Product`'s document. To do this, we create a new class called `EmbeddedCategory` which has two fields, `id` and `name`. We denormalize `Product` documents by embedding the `id` and `name` of `categories`. That way we can retrieve all of the `categories` for a `product` without having to perform a join between `Product` and `Category` in the applicaton. Denormalization enables faster reads at the cost of less consistency. 
+
+Note that the relationship between `Product` and `Category` is not handled by the database and we must manually maintain data consistency after each change. In other words, if a `category` name changes, we must update the `name` field of every corresponding `EmbeddedCategory` in `Products` to ensure consistency.
+
+
 ```Java
 private Set<EmbeddedCategory> fallIntoCategories = new HashSet<>();
 ```
+
 Each `category` has lots of `products`, so we model the relation between `Category` and `Product` by storing references to `Products` in `Category`.
 
 ```Java
@@ -651,12 +656,11 @@ import ecommerce.tutorial.mongodb.models.Product;
 
 public interface ProductRepository extends MongoRepository<Product, String>
 {
-
     Product findByName(String name);
 }
 ```
 
-# 8. Insert data using a Spring Boot Application
+# 8. Run the Project using a Spring Boot Application
 Create a java class called `Application` inside the `ecommerce.tutorial` package. This class is where our main method is located. We need to annotate the class with `@SpringBootApplication`, `@EnableJpaRepositories` and `@EnableMongoRepositories`. `@SpringBootApplication` initializes Spring Boot Auto Configuration and Spring application context.
 
 ```Java
@@ -784,9 +788,6 @@ The class also has a `@RequestMapping` annotation. The `path` element of this an
 
 In the first field of the `CategoryService` class we create an instance of the `MongoOperations` interface. We're going to use the `updateFirst` and the `updateMulti` methods of this interface for updating a `category` and updating `products` after updating a `category` respectively.
 
-??????
-Whenever we update a `category`, the `products` which fall into this `category` must also be updated manually because the Spring framework doesn't support cascading updates.
-??????Az rooye noteham edit konam in sentence ro
 
 We are using Spring's `@Autowired` annotation to wire the `CategoryJpaRepository` and `CategoryRepository` into the `Category` controller.
 
@@ -1478,13 +1479,14 @@ if (product.getName() == null || product.getName().trim().isEmpty())
 }
 if (product.getImages() == null || product.getImages().size() == 0)
 {
-     return HttpStatus.BAD_REQUEST;
+    return HttpStatus.BAD_REQUEST;
 }
 ```
 
 An instance of the `MongoOperations` interface is created and in the `updateProductInMongoDB` method, the  `updateFirst` method of this interface is used to update `product`.
 
-The `addNewProductInMongoDB` method handles the HTTP `POST` requests which have `/product/mongo` URL patterns. This method creates a new `product` document, saves it in the `products` collection and then adds a reference to this `product` document in the `category` documents to which the `product` belongs.
+The `addNewProductInMongoDB` method handles the HTTP `POST` requests which have `/product/mongo` URL patterns. This method creates a new `product` document, saves it in the `products` collection.
+Unlike Spring Data JPA calling save on the `Product` object will not automatically saves the references in `Categires` documents. So, then adds a reference to this `product` document in the `category` documents to which the `product` belongs.
 Whenever we add a new `product`, the `categories` which the `product` belongs to must also be updated manually.
 
 ```Java

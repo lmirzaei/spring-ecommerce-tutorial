@@ -26,7 +26,7 @@ public class ProfileEntity
     private long id;
 
     @OneToOne
-    @JoinColumn
+    @JoinColumn(nullable = false)
     @MapsId
     @JsonIgnore
     private SellerEntity seller;

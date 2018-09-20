@@ -42,7 +42,7 @@ public class ProductEntity
     private List<String> images;
 
     @ManyToOne(targetEntity = SellerEntity.class)
-    @JoinColumn(name = "seller_id", referencedColumnName = "id")
+    @JoinColumn(name = "seller_id", referencedColumnName = "id", nullable = false)
     @NotNull
     private SellerEntity seller;
 
